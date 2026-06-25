@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SevenHome – Check-in Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#F8F7F4;color:#1A1A2E;min-height:100vh;overflow:hidden}
+
+/* TOOLBAR */
+.toolbar{background:#1A1A2E;color:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.2)}
+.toolbar-brand{display:flex;align-items:center;gap:12px}
+.toolbar-icon{width:34px;height:34px;background:#C9A84C;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#1A1A2E;flex-shrink:0}
+.toolbar h1{font-size:17px;font-weight:600;color:#C9A84C;letter-spacing:-.3px}
+.toolbar h1 span{color:#fff;font-weight:300}
+.btn-pdf{background:#C9A84C;color:#1A1A2E;border:none;padding:10px 22px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .18s;letter-spacing:.1px}
+.btn-pdf:hover{background:#d4b35e;transform:translateY(-1px);box-shadow:0 4px 14px rgba(201,168,76,.35)}
+.btn-pdf svg{flex-shrink:0}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:420px 1fr;height:calc(100vh - 61px);overflow:hidden}
+
+/* FORM PANEL */
+.form-panel{background:#fff;border-right:1px solid #e8e6e1;overflow-y:auto;padding:20px}
+.form-panel::-webkit-scrollbar{width:5px}
+.form-panel::-webkit-scrollbar-thumb{background:#d0ccc5;border-radius:3px}
+
+.fs{margin-bottom:16px;border:1.5px solid #e8e6e1;border-radius:12px;overflow:hidden}
+.fs-head{background:#F8F7F4;padding:11px 14px;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;border-bottom:1.5px solid #e8e6e1;transition:background .15s}
+.fs-head:hover{background:#eeebe5}
+.fs-head.collapsed{border-bottom:none}
+.fs-num{background:#1A1A2E;color:#C9A84C;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.fs-head h3{font-size:12.5px;font-weight:600;flex:1}
+.chevron{font-size:10px;color:#999;transition:transform .2s}
+.fs-head.collapsed .chevron{transform:rotate(-90deg)}
+.fs-body{padding:14px;display:flex;flex-direction:column;gap:11px}
+.fs-body.collapsed{display:none}
+
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.fg{display:flex;flex-direction:column;gap:4px}
+label.lbl{font-size:10.5px;font-weight:600;color:#777;text-transform:uppercase;letter-spacing:.5px}
+
+input[type=text],input[type=url],textarea,select{font-family:'Inter',sans-serif;font-size:12.5px;border:1.5px solid #e0ddd8;border-radius:8px;padding:7px 10px;outline:none;transition:border-color .15s;background:#fff;color:#1A1A2E;width:100%}
+input[type=text]:focus,input[type=url]:focus,textarea:focus{border-color:#C9A84C}
+textarea{resize:vertical;min-height:64px}
+
+.photo-up{border:2px dashed #d4d0ca;border-radius:8px;padding:10px;text-align:center;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#fafaf8}
+.photo-up:hover{border-color:#C9A84C;background:#fdf9f0}
+.photo-up input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-up .up-icon{font-size:20px;line-height:1}
+.photo-up .up-lbl{font-size:10px;color:#999;font-weight:500}
+.photo-up .up-prev{width:100%;height:auto;max-height:160px;object-fit:contain;border-radius:5px;display:none}
+.photo-up.has-img .up-icon,.photo-up.has-img .up-lbl{display:none}
+.photo-up.has-img .up-prev{display:block}
+.del-btn{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(26,26,46,.72);color:#fff;font-size:12px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:10;transition:background .15s;padding:0}
+.del-btn:hover{background:#c0392b}
+.photo-up.has-img .del-btn{display:flex}
+
+.lang-sel{display:flex;gap:6px;flex-wrap:wrap}
+.lang-btn{padding:5px 11px;border:1.5px solid #e0ddd8;border-radius:8px;background:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+.lang-btn:hover{border-color:#C9A84C}
+.lang-btn.active{background:#1A1A2E;border-color:#1A1A2E;color:#C9A84C}
+
+.toggle-grp{display:flex;flex-direction:column;gap:7px}
+.tog-row{display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer}
+.tog-row input[type=checkbox]{width:15px;height:15px;accent-color:#C9A84C;cursor:pointer;flex-shrink:0}
+
+.step-blk{background:#F8F7F4;border-radius:8px;padding:11px;display:flex;flex-direction:column;gap:9px}
+.step-blk h4{font-size:10.5px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px}
+.divider{height:1px;background:#e8e6e1}
+
+/* PREVIEW PANEL */
+.preview-panel{background:#dedad4;overflow-y:auto;padding:28px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.preview-panel::-webkit-scrollbar{width:6px}
+.preview-panel::-webkit-scrollbar-thumb{background:#c0bbb3;border-radius:3px}
+
+.pp{background:#fff;width:794px;height:1123px;border-radius:3px;box-shadow:0 4px 28px rgba(0,0,0,.14);overflow:hidden;position:relative;flex-shrink:0}
+.pp-inner{padding:52px 60px 36px;height:100%;display:flex;flex-direction:column}
+
+/* Cover page */
+.p-logo-wrap{display:flex;justify-content:center;margin-bottom:20px}
+.p-logo-wrap img{max-height:90px;max-width:260px;object-fit:contain}
+.p-logo-ph{height:64px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#1A1A2E;letter-spacing:-0.5px}
+.p-lang-badge{display:flex;justify-content:center;margin-bottom:10px}
+.p-lang-pill{background:#f0ede8;border-radius:100px;padding:4px 16px;font-size:11.5px;font-weight:500;color:#777;display:flex;align-items:center;gap:5px}
+.p-city{text-align:center;font-size:38px;font-weight:700;color:#1A1A2E;line-height:1.1;margin-bottom:8px;letter-spacing:-.5px}
+.p-address{text-align:center;font-size:14px;color:#999;margin-bottom:24px}
+.p-map-wrap{flex:1;border-radius:12px;overflow:hidden;background:#e8e6e1;position:relative;min-height:280px;max-height:440px;margin-bottom:10px}
+.p-map-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#bbb;font-size:12px;pointer-events:none}
+.p-map-wrap>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.p-map-wrap>a{position:absolute;inset:0;display:block;cursor:pointer}
+.p-map-wrap>a:hover{opacity:.92}
+.p-map-wrap>a img{width:100%;height:100%;object-fit:cover;display:block}
+.p-map-caption{text-align:center;font-size:10.5px;color:#aaa;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:4px}
+
+.p-index{background:#F8F7F4;border:1px solid #e8e6e1;border-radius:12px;padding:18px 22px}
+.p-index-ttl{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.p-idx-item{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e8e6e1;font-size:13.5px}
+.p-idx-item:last-child{border-bottom:none;padding-bottom:0}
+.idx-icon{font-size:17px;width:26px;text-align:center}
+.idx-title{flex:1;font-weight:500;color:#1A1A2E}
+.idx-page{font-size:11px;color:#C9A84C;font-weight:600;background:rgba(201,168,76,.12);padding:2px 9px;border-radius:100px}
+
+/* Section pages */
+.p-sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:14px;border-bottom:2.5px solid #1A1A2E}
+.p-sec-title{font-size:26px;font-weight:700;color:#1A1A2E;letter-spacing:-.3px}
+.p-sec-badge{font-size:11.5px;color:#C9A84C;font-weight:600;background:rgba(26,26,46,.06);padding:4px 12px;border-radius:100px}
+
+.p-step{margin-bottom:18px}
+.p-step-lbl{font-size:10px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px}
+.p-step-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.p-step-col{display:flex;flex-direction:column;gap:7px}
+.p-photo{width:100%;border-radius:8px;overflow:hidden;background:#eeebe6}
+.p-photo img{width:100%;height:auto;display:block}
+.p-photo-empty{min-height:90px;display:flex;align-items:center;justify-content:center}
+.p-photo-ph{font-size:11px;color:#ccc;text-align:center;padding:8px}
+.p-text{font-size:11.5px;color:#555;line-height:1.55;padding:0 2px;min-height:28px}
+
+.p-notes{background:#fffdf5;border:1.5px solid #f0e8c8;border-radius:8px;padding:13px 15px;margin-top:12px}
+.p-notes-lbl{font-size:9.5px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.p-notes-text{font-size:11.5px;color:#555;line-height:1.5}
+
+.p-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:11.5px;color:#1A1A2E;background:rgba(26,26,46,.06);padding:6px 12px;border-radius:6px;font-weight:500;text-decoration:none;cursor:pointer;border:1px solid rgba(26,26,46,.12);transition:background .15s}
+.p-link:hover{background:rgba(26,26,46,.12)}
+
+.p-footer{margin-top:auto;padding-top:12px;border-top:1px solid #ebe9e4;display:flex;align-items:center;justify-content:space-between}
+.p-footer-brand{font-size:9px;color:#ccc;font-weight:600;letter-spacing:.8px}
+.p-footer-page{font-size:10px;color:#C9A84C;font-weight:600}
+
+/* LOGIN SCREEN */
+.login-screen{position:fixed;inset:0;background:#1A1A2E;z-index:9000;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.login-screen.hidden{display:none}
+.login-box{background:#fff;border-radius:20px;padding:44px 48px;width:380px;max-width:92vw;box-shadow:0 32px 80px rgba(0,0,0,.35)}
+.login-brand{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:32px}
+.login-brand-icon{width:46px;height:46px;background:#C9A84C;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:#1A1A2E;flex-shrink:0}
+.login-brand-name{font-size:20px;font-weight:700;color:#1A1A2E;letter-spacing:-.3px}
+.login-brand-name span{font-weight:300;color:#999}
+.login-title{text-align:center;font-size:15px;font-weight:600;color:#1A1A2E;margin-bottom:4px}
+.login-sub{text-align:center;font-size:12.5px;color:#aaa;margin-bottom:28px}
+.login-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.login-field label{font-size:10.5px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.5px}
+.login-field input{font-family:'Inter',sans-serif;font-size:14px;border:1.5px solid #e0ddd8;border-radius:9px;padding:11px 14px;outline:none;transition:border-color .15s;color:#1A1A2E;background:#fafaf8}
+.login-field input:focus{border-color:#C9A84C;background:#fff}
+.login-error{background:#fff1f0;border:1.5px solid #ffd6d4;color:#c0392b;border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:500;margin-bottom:14px;display:none;text-align:center}
+.login-error.show{display:block}
+.login-btn{width:100%;background:#1A1A2E;color:#C9A84C;border:none;border-radius:9px;padding:13px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;letter-spacing:.1px;margin-top:4px}
+.login-btn:hover{background:#2a2a42;transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,26,46,.2)}
+.login-btn:active{transform:translateY(0)}
+.login-footer{color:rgba(255,255,255,.25);font-size:11px;margin-top:24px;text-align:center}
+
+/* Secondary toolbar buttons */
+.btn-sec{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.18);padding:8px 16px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.btn-sec:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.32)}
+/* Current project badge */
+.proj-badge{display:none;align-items:center;gap:7px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);padding:5px 12px;border-radius:100px;font-size:11.5px;color:#C9A84C;font-weight:500;max-width:220px}
+.proj-badge.visible{display:flex}
+.proj-badge-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.proj-badge-x{cursor:pointer;opacity:.6;font-size:13px;flex-shrink:0;line-height:1}
+.proj-badge-x:hover{opacity:1}
+/* Rename input in project card */
+.proj-rename-input{flex:1;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#1A1A2E;border:1.5px solid #C9A84C;border-radius:6px;padding:3px 8px;outline:none}
+.proj-rename-btn{padding:4px 10px;border:1.5px solid #1A1A2E;background:#1A1A2E;color:#C9A84C;border-radius:6px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer}
+/* Save dialog update button */
+.btn-update{background:#1A1A2E;color:#C9A84C;border:none;border-radius:8px;padding:8px 18px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-update:hover{background:#2a2a42}
+
+/* Projects modal */
+.proj-overlay{position:fixed;inset:0;background:rgba(10,10,20,.6);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.proj-overlay.open{display:flex}
+.proj-modal{background:#fff;border-radius:16px;width:560px;max-width:96vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.22)}
+.proj-modal-head{padding:20px 24px 16px;border-bottom:1.5px solid #e8e6e1;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.proj-modal-head h2{font-size:17px;font-weight:700;color:#1A1A2E}
+.proj-modal-head button{width:30px;height:30px;border-radius:50%;border:none;background:#f0ede8;color:#666;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.proj-modal-head button:hover{background:#e0ddd8}
+.proj-list{overflow-y:auto;padding:16px 24px;display:flex;flex-direction:column;gap:10px;min-height:80px}
+.proj-list::-webkit-scrollbar{width:5px}
+.proj-list::-webkit-scrollbar-thumb{background:#d0ccc5;border-radius:3px}
+.proj-empty{text-align:center;color:#bbb;font-size:13px;padding:32px 0}
+.proj-card{border:1.5px solid #e8e6e1;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;transition:border-color .15s}
+.proj-card:hover{border-color:#C9A84C}
+.proj-card-icon{width:38px;height:38px;background:#F8F7F4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.proj-card-info{flex:1;min-width:0}
+.proj-card-name{font-size:14px;font-weight:600;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj-card-meta{font-size:11px;color:#aaa;margin-top:2px}
+.proj-card-actions{display:flex;gap:6px;flex-shrink:0}
+.proj-load-btn{padding:6px 14px;border:1.5px solid #1A1A2E;background:#1A1A2E;color:#C9A84C;border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.proj-load-btn:hover{background:#2a2a42}
+.proj-del-btn{width:30px;height:30px;border-radius:7px;border:1.5px solid #e8e6e1;background:#fff;color:#bbb;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.proj-del-btn:hover{border-color:#e74c3c;color:#e74c3c}
+
+/* Save name dialog */
+.save-dialog{position:fixed;inset:0;background:rgba(10,10,20,.5);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.save-dialog.open{display:flex}
+.save-dialog-box{background:#fff;border-radius:14px;padding:28px;width:380px;max-width:94vw;box-shadow:0 16px 48px rgba(0,0,0,.2)}
+.save-dialog-box h3{font-size:16px;font-weight:700;color:#1A1A2E;margin-bottom:6px}
+.save-dialog-box p{font-size:12.5px;color:#999;margin-bottom:16px}
+.save-dialog-box input{width:100%;font-family:'Inter',sans-serif;font-size:14px;border:1.5px solid #e0ddd8;border-radius:8px;padding:10px 12px;outline:none;color:#1A1A2E;margin-bottom:14px}
+.save-dialog-box input:focus{border-color:#C9A84C}
+.save-dialog-btns{display:flex;gap:8px;justify-content:flex-end}
+.save-dialog-btns button{padding:8px 18px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-cancel{background:#f0ede8;color:#666}
+.btn-cancel:hover{background:#e5e2dc}
+.btn-confirm{background:#C9A84C;color:#1A1A2E}
+.btn-confirm:hover{background:#d4b35e}
+
+/* Loading overlay */
+.pdf-loading{position:fixed;inset:0;background:rgba(26,26,46,.88);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:14px}
+.pdf-loading.active{display:flex}
+.pdf-loading h3{color:#fff;font-size:17px}
+.pdf-loading p{color:rgba(255,255,255,.6);font-size:13px}
+.spinner{width:38px;height:38px;border:3px solid rgba(201,168,76,.25);border-top-color:#C9A84C;border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-brand">
+      <div class="login-brand-icon">S7</div>
+      <div class="login-brand-name">SevenHome <span>Properties</span></div>
+    </div>
+    <div class="login-title">Accedi al Check-in Builder</div>
+    <div class="login-sub">Inserisci le credenziali per continuare</div>
+    <div class="login-field">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="username" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-error" id="login-error">Username o password non corretti</div>
+    <button class="login-btn" onclick="doLogin()">Accedi</button>
+  </div>
+  <div class="login-footer">SevenHome Properties · Uso interno</div>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-brand">
+    <div class="toolbar-icon">S7</div>
+    <h1>SevenHome <span>Check-in Builder</span></h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button class="btn-sec" onclick="openProjects()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Progetti
+    </button>
+    <div class="proj-badge" id="proj-badge">
+      <span>📂</span>
+      <span class="proj-badge-name" id="proj-badge-name"></span>
+      <span class="proj-badge-x" onclick="clearCurrentProject()" title="Deseleziona progetto">✕</span>
+    </div>
+    <button class="btn-sec" onclick="saveProject()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Salva
+    </button>
+    <button class="btn-pdf" onclick="generatePDF()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      <span id="btn-pdf-label">Genera PDF</span>
+    </button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ===== FORM PANEL ===== -->
+<div class="form-panel">
+
+  <!-- Header -->
+  <div class="fs">
+    <div class="fs-head" onclick="toggleSec(this)">
+      <div class="fs-num">⚙</div>
+      <h3>Intestazione &amp; Lingua</h3>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="fs-body">
+      <div class="fg">
+        <label class="lbl">Logo Aziendale</label>
+        <div class="photo-up" id="logo-up">
+          <input type="file" accept="image/*" onchange="handleLogo(event)">
+          <span class="up-icon">🏢</span>
+          <span class="up-lbl">Carica logo (PNG / SVG)</span>
+          <img class="up-prev" id="logo-prev">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="lbl">Lingua</label>
+        <div class="lang-sel">
+          <button class="lang-btn active" onclick="setLang('IT',this)">🇮🇹 IT</button>
+          <button class="lang-btn" onclick="setLang('EN',this)">🇬🇧 EN</button>
+          <button class="lang-btn" onclick="setLang('DE',this)">🇩🇪 DE</button>
+          <button class="lang-btn" onclick="setLang('FR',this)">🇫🇷 FR</button>
+          <button class="lang-btn" onclick="setLang('ES',this)">🇪🇸 ES</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 1 -->
+  <div class="fs">
+    <div class="fs-head" onclick="toggleSec(this)">
+      <div class="fs-num">1</div>
+      <h3>Pagina 1 — Copertina / Posizione</h3>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="fs-body">
+      <div class="frow">
+        <div class="fg">
+          <label class="lbl">Città &amp; Quartiere</label>
+          <input type="text" id="f-city" placeholder="es. Genova – Carignano" oninput="render()">
+        </div>
+        <div class="fg">
+          <label class="lbl">Indirizzo Completo</label>
+          <input type="text" id="f-address" placeholder="Via Roma 12, 16121 Genova" oninput="render()">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="lbl">Link Google Maps</label>
+        <input type="url" id="f-maps" placeholder="https://maps.google.com/..." oninput="render()">
+      </div>
+      <div class="fg">
+        <label class="lbl">Foto Mappa / Satellite</label>
+        <div class="photo-up">
+          <input type="file" accept="image/*" onchange="handlePhoto(event,'mapPhoto')">
+          <span class="up-icon">🗺️</span>
+          <span class="up-lbl">Carica immagine mappa</span>
+          <img class="up-prev" id="mapPhoto-prev">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="fg">
+        <label class="lbl">Sezioni incluse</label>
+        <div class="toggle-grp">
+          <label class="tog-row"><input type="checkbox" id="tog-p2" checked onchange="render()"> 🏢 Pag. 2 — <span id="tl-p2">Accesso all'edificio</span></label>
+          <label class="tog-row"><input type="checkbox" id="tog-p3" checked onchange="render()"> 🔑 Pag. 3 — <span id="tl-p3">Ritiro chiavi</span></label>
+          <label class="tog-row"><input type="checkbox" id="tog-p4" checked onchange="render()"> 🚪 Pag. 4 — <span id="tl-p4">Accesso all'appartamento</span></label>
+          <label class="tog-row"><input type="checkbox" id="tog-p5" checked onchange="render()"> 🅿️ Pag. 5 — <span id="tl-p5">Parcheggio</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 2 -->
+  <div class="fs">
+    <div class="fs-head" onclick="toggleSec(this)">
+      <div class="fs-num">2</div>
+      <h3 id="fh-p2">🏢 Pagina 2 — Accesso all'edificio</h3>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="fs-body">
+      <div class="step-blk">
+        <h4 id="sl1-p2">Step 1</h4>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Foto Sinistra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p2s1l')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p2s1l-prev"></div></div>
+          <div class="fg"><label class="lbl">Foto Destra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p2s1r')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p2s1r-prev"></div></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Testo Sinistra</label><textarea id="p2s1lt" oninput="render()"></textarea></div>
+          <div class="fg"><label class="lbl">Testo Destra</label><textarea id="p2s1rt" oninput="render()"></textarea></div>
+        </div>
+      </div>
+      <div class="step-blk">
+        <h4 id="sl2-p2">Step 2</h4>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Foto Sinistra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p2s2l')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p2s2l-prev"></div></div>
+          <div class="fg"><label class="lbl">Foto Destra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p2s2r')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p2s2r-prev"></div></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Testo Sinistra</label><textarea id="p2s2lt" oninput="render()"></textarea></div>
+          <div class="fg"><label class="lbl">Testo Destra</label><textarea id="p2s2rt" oninput="render()"></textarea></div>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl" id="nl-p2">Note</label><textarea id="p2notes" oninput="render()"></textarea></div>
+      <div class="fg">
+        <label class="lbl" id="ll-p2">Link Utili</label>
+        <div class="frow">
+          <input type="url" id="p2lurl" placeholder="https://..." oninput="render()">
+          <input type="text" id="p2llbl" placeholder="Etichetta" oninput="render()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 3 -->
+  <div class="fs">
+    <div class="fs-head" onclick="toggleSec(this)">
+      <div class="fs-num">3</div>
+      <h3 id="fh-p3">🔑 Pagina 3 — Ritiro chiavi</h3>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="fs-body">
+      <div class="step-blk">
+        <h4 id="sl1-p3">Step 1</h4>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Foto Sinistra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p3s1l')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p3s1l-prev"></div></div>
+          <div class="fg"><label class="lbl">Foto Destra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p3s1r')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p3s1r-prev"></div></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Testo Sinistra</label><textarea id="p3s1lt" oninput="render()"></textarea></div>
+          <div class="fg"><label class="lbl">Testo Destra</label><textarea id="p3s1rt" oninput="render()"></textarea></div>
+        </div>
+      </div>
+      <div class="step-blk">
+        <h4 id="sl2-p3">Step 2</h4>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Foto Sinistra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p3s2l')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p3s2l-prev"></div></div>
+          <div class="fg"><label class="lbl">Foto Destra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p3s2r')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p3s2r-prev"></div></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Testo Sinistra</label><textarea id="p3s2lt" oninput="render()"></textarea></div>
+          <div class="fg"><label class="lbl">Testo Destra</label><textarea id="p3s2rt" oninput="render()"></textarea></div>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl" id="nl-p3">Note</label><textarea id="p3notes" oninput="render()"></textarea></div>
+    </div>
+  </div>
+
+  <!-- Page 4 -->
+  <div class="fs">
+    <div class="fs-head" onclick="toggleSec(this)">
+      <div class="fs-num">4</div>
+      <h3 id="fh-p4">🚪 Pagina 4 — Accesso all'appartamento</h3>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="fs-body">
+      <div class="step-blk">
+        <h4 id="sl1-p4">Step 1</h4>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Foto Sinistra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p4s1l')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p4s1l-prev"></div></div>
+          <div class="fg"><label class="lbl">Foto Destra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p4s1r')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p4s1r-prev"></div></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Testo Sinistra</label><textarea id="p4s1lt" oninput="render()"></textarea></div>
+          <div class="fg"><label class="lbl">Testo Destra</label><textarea id="p4s1rt" oninput="render()"></textarea></div>
+        </div>
+      </div>
+      <div class="step-blk">
+        <h4 id="sl2-p4">Step 2</h4>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Foto Sinistra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p4s2l')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p4s2l-prev"></div></div>
+          <div class="fg"><label class="lbl">Foto Destra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p4s2r')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p4s2r-prev"></div></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Testo Sinistra</label><textarea id="p4s2lt" oninput="render()"></textarea></div>
+          <div class="fg"><label class="lbl">Testo Destra</label><textarea id="p4s2rt" oninput="render()"></textarea></div>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl" id="nl-p4">Note</label><textarea id="p4notes" oninput="render()"></textarea></div>
+    </div>
+  </div>
+
+  <!-- Page 5 -->
+  <div class="fs">
+    <div class="fs-head" onclick="toggleSec(this)">
+      <div class="fs-num">5</div>
+      <h3 id="fh-p5">🅿️ Pagina 5 — Parcheggio</h3>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="fs-body">
+      <div class="step-blk">
+        <h4 id="sl1-p5">Step 1</h4>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Foto Sinistra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p5s1l')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p5s1l-prev"></div></div>
+          <div class="fg"><label class="lbl">Foto Destra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p5s1r')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p5s1r-prev"></div></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Testo Sinistra</label><textarea id="p5s1lt" oninput="render()"></textarea></div>
+          <div class="fg"><label class="lbl">Testo Destra</label><textarea id="p5s1rt" oninput="render()"></textarea></div>
+        </div>
+      </div>
+      <div class="step-blk">
+        <h4 id="sl2-p5">Step 2</h4>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Foto Sinistra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p5s2l')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p5s2l-prev"></div></div>
+          <div class="fg"><label class="lbl">Foto Destra</label><div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p5s2r')"><span class="up-icon">📷</span><span class="up-lbl">Carica foto</span><img class="up-prev" id="p5s2r-prev"></div></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="lbl">Testo Sinistra</label><textarea id="p5s2lt" oninput="render()"></textarea></div>
+          <div class="fg"><label class="lbl">Testo Destra</label><textarea id="p5s2rt" oninput="render()"></textarea></div>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl" id="nl-p5">Note</label><textarea id="p5notes" oninput="render()"></textarea></div>
+    </div>
+  </div>
+
+</div><!-- /form-panel -->
+
+<!-- ===== PREVIEW PANEL ===== -->
+<div class="preview-panel" id="preview-panel">
+
+  <!-- Cover -->
+  <div class="pp" id="pp1">
+    <div class="pp-inner">
+      <div class="p-logo-wrap" id="pv-logo"><div class="p-logo-ph">SevenHome Properties</div></div>
+      <div class="p-lang-badge"><div class="p-lang-pill" id="pv-lang">🇮🇹 Italiano</div></div>
+      <div class="p-city" id="pv-city">Città – Quartiere</div>
+      <div class="p-address" id="pv-address">Indirizzo completo</div>
+      <div class="p-map-wrap" id="pv-map"><div class="p-map-ph"><span style="font-size:36px">🗺️</span><span>Carica l'immagine della mappa</span></div></div>
+      <div class="p-map-caption" id="pv-caption"><span>📍</span>&nbsp;Clicca sull'immagine per aprire Google Maps</div>
+      <div class="p-index">
+        <div class="p-index-ttl" id="pv-idx-title">Indice</div>
+        <div id="pv-idx-items"></div>
+      </div>
+      <div class="p-footer"><span class="p-footer-brand">SEVENHOME PROPERTIES</span><span class="p-footer-page">1</span></div>
+    </div>
+  </div>
+
+  <!-- Section pages injected here -->
+  <div id="pv-pages"></div>
+
+</div>
+</div>
+
+<!-- Projects Modal -->
+<div class="proj-overlay" id="proj-overlay" onclick="if(event.target===this)closeProjects()">
+  <div class="proj-modal">
+    <div class="proj-modal-head">
+      <h2>📁 Progetti Salvati</h2>
+      <button onclick="closeProjects()">✕</button>
+    </div>
+    <div class="proj-list" id="proj-list"></div>
+  </div>
+</div>
+
+<!-- Save Name Dialog -->
+<div class="save-dialog" id="save-dialog" onclick="if(event.target===this)closeSaveDialog()">
+  <div class="save-dialog-box">
+    <h3>Salva progetto</h3>
+    <p>Dai un nome a questo progetto per ritrovarlo in seguito.</p>
+    <input type="text" id="save-name-input" placeholder="es. Appartamento Via Roma – Genova" maxlength="60" onkeydown="if(event.key==='Enter')confirmSave()">
+    <div class="save-dialog-btns" id="save-dialog-btns">
+      <button class="btn-cancel" onclick="closeSaveDialog()">Annulla</button>
+      <button class="btn-confirm" onclick="confirmSave(false)">Salva come nuovo</button>
+      <button class="btn-update" id="btn-update-proj" onclick="confirmSave(true)" style="display:none">Aggiorna</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF Loading -->
+<div class="pdf-loading" id="pdf-loading">
+  <div class="spinner"></div>
+  <h3>Generazione PDF in corso…</h3>
+  <p id="pdf-msg">Elaborazione pagina 1…</p>
+</div>
+
+<script>
+// ======================================================
+// AUTH
+// ======================================================
+const CREDENTIALS = { username: 'sevenhomeproperties', password: 'Andreas2026' };
+
+function doLogin(){
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-error');
+  if(user === CREDENTIALS.username && pass === CREDENTIALS.password){
+    sessionStorage.setItem('sh_auth','1');
+    document.getElementById('login-screen').classList.add('hidden');
+    err.classList.remove('show');
+  } else {
+    err.classList.add('show');
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+    // Shake animation
+    const box = document.querySelector('.login-box');
+    box.style.animation = 'none';
+    box.offsetHeight; // reflow
+    box.style.animation = 'shake .35s ease';
+  }
+}
+
+// Check session on load
+(function checkAuth(){
+  if(sessionStorage.getItem('sh_auth') === '1'){
+    document.getElementById('login-screen').classList.add('hidden');
+  } else {
+    // Focus username field after render
+    setTimeout(()=>document.getElementById('login-user').focus(), 100);
+  }
+})();
+
+// ======================================================
+// TRANSLATIONS
+// ======================================================
+const T = {
+  IT:{flag:'🇮🇹',name:'Italiano',idx:'Indice',pg:'Pagina',pdf:'Genera PDF',
+    s1:'Step 1',s2:'Step 2',notes:'Note',links:'Link Utili',
+    cap:"Clicca sull'immagine per aprire Google Maps",
+    pages:[
+      {icon:'🏢',title:"Accesso all'edificio",n:2},
+      {icon:'🔑',title:'Ritiro chiavi',n:3},
+      {icon:'🚪',title:"Accesso all'appartamento",n:4},
+      {icon:'🅿️',title:'Parcheggio',n:5}
+    ]},
+  EN:{flag:'🇬🇧',name:'English',idx:'Index',pg:'Page',pdf:'Generate PDF',
+    s1:'Step 1',s2:'Step 2',notes:'Notes',links:'Useful Links',
+    cap:'Click the image to open Google Maps',
+    pages:[
+      {icon:'🏢',title:'Building Access',n:2},
+      {icon:'🔑',title:'Key Collection',n:3},
+      {icon:'🚪',title:'Apartment Access',n:4},
+      {icon:'🅿️',title:'Parking',n:5}
+    ]},
+  DE:{flag:'🇩🇪',name:'Deutsch',idx:'Inhaltsverzeichnis',pg:'Seite',pdf:'PDF erstellen',
+    s1:'Schritt 1',s2:'Schritt 2',notes:'Hinweise',links:'Nützliche Links',
+    cap:'Klicken Sie auf das Bild, um Google Maps zu öffnen',
+    pages:[
+      {icon:'🏢',title:'Gebäudezugang',n:2},
+      {icon:'🔑',title:'Schlüsselabholung',n:3},
+      {icon:'🚪',title:'Wohnungszugang',n:4},
+      {icon:'🅿️',title:'Parken',n:5}
+    ]},
+  FR:{flag:'🇫🇷',name:'Français',idx:'Index',pg:'Page',pdf:'Générer le PDF',
+    s1:'Étape 1',s2:'Étape 2',notes:'Notes',links:'Liens utiles',
+    cap:"Cliquez sur l'image pour ouvrir Google Maps",
+    pages:[
+      {icon:'🏢',title:"Accès à l'immeuble",n:2},
+      {icon:'🔑',title:'Récupération des clés',n:3},
+      {icon:'🚪',title:"Accès à l'appartement",n:4},
+      {icon:'🅿️',title:'Parking',n:5}
+    ]},
+  ES:{flag:'🇪🇸',name:'Español',idx:'Índice',pg:'Página',pdf:'Generar PDF',
+    s1:'Paso 1',s2:'Paso 2',notes:'Notas',links:'Enlaces útiles',
+    cap:'Haz clic en la imagen para abrir Google Maps',
+    pages:[
+      {icon:'🏢',title:'Acceso al edificio',n:2},
+      {icon:'🔑',title:'Recogida de llaves',n:3},
+      {icon:'🚪',title:'Acceso al apartamento',n:4},
+      {icon:'🅿️',title:'Aparcamiento',n:5}
+    ]}
+};
+
+// ======================================================
+// STATE
+// ======================================================
+const S = {
+  lang:'IT',
+  logo:null,
+  photos:{},
+  currentProjectId: null,
+  currentProjectName: null,
+};
+
+// ======================================================
+// HELPERS
+// ======================================================
+function esc(s){
+  if(!s)return'';
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/\n/g,'<br>');
+}
+function v(id){const el=document.getElementById(id);return el?el.value:'';}
+function tog(id){const el=document.getElementById(id);return el?el.checked:true;}
+function photo(key){return S.photos[key]||null;}
+function photoCell(key,label){
+  const src=photo(key);
+  return src
+    ?`<div class="p-photo"><img src="${src}" alt=""></div>`
+    :`<div class="p-photo p-photo-empty"><div class="p-photo-ph">📷<br><span style="font-size:9px">${esc(label)}</span></div></div>`;
+}
+
+// ======================================================
+// SECTION COLLAPSE
+// ======================================================
+function toggleSec(hd){
+  const body=hd.nextElementSibling;
+  hd.classList.toggle('collapsed');
+  body.classList.toggle('collapsed');
+}
+
+// ======================================================
+// IMAGE UPLOAD
+// ======================================================
+function handleLogo(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    S.logo=e.target.result;
+    const prev=document.getElementById('logo-prev');
+    prev.src=S.logo;
+    ev.target.closest('.photo-up').classList.add('has-img');
+    render();
+  };
+  r.readAsDataURL(f);
+}
+
+function handlePhoto(ev,key){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    S.photos[key]=e.target.result;
+    const prev=document.getElementById(key+'-prev');
+    if(prev){prev.src=S.photos[key];ev.target.closest('.photo-up').classList.add('has-img');}
+    render();
+  };
+  r.readAsDataURL(f);
+}
+
+// ======================================================
+// LANGUAGE
+// ======================================================
+function setLang(lang,btn){
+  S.lang=lang;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updateFormLabels();
+  render();
+}
+
+function updateFormLabels(){
+  const t=T[S.lang];
+  document.getElementById('btn-pdf-label').textContent=t.pdf;
+  const icons=['🏢','🔑','🚪','🅿️'];
+  t.pages.forEach((p,i)=>{
+    const n=i+2;
+    const fh=document.getElementById('fh-p'+n);
+    if(fh)fh.textContent=`${p.icon} Pagina ${n} — ${p.title}`;
+    const tl=document.getElementById('tl-p'+n);
+    if(tl)tl.textContent=p.title;
+    const s1=document.getElementById('sl1-p'+n);if(s1)s1.textContent=t.s1;
+    const s2=document.getElementById('sl2-p'+n);if(s2)s2.textContent=t.s2;
+    const nl=document.getElementById('nl-p'+n);if(nl)nl.textContent=t.notes;
+  });
+  const ll=document.getElementById('ll-p2');if(ll)ll.textContent=t.links;
+}
+
+// ======================================================
+// RENDER PREVIEW
+// ======================================================
+function render(){
+  const t=T[S.lang];
+
+  // Logo
+  const logoWrap=document.getElementById('pv-logo');
+  logoWrap.innerHTML=S.logo
+    ?`<img src="${S.logo}" style="max-height:90px;max-width:260px;object-fit:contain">`
+    :`<div class="p-logo-ph">SevenHome Properties</div>`;
+
+  // Lang pill
+  document.getElementById('pv-lang').textContent=`${t.flag} ${t.name}`;
+
+  // City / address
+  const city=v('f-city');
+  const addr=v('f-address');
+  document.getElementById('pv-city').textContent=city||'Città – Quartiere';
+  document.getElementById('pv-address').textContent=addr||'Indirizzo completo';
+
+  // Map
+  const mapEl=document.getElementById('pv-map');
+  const mapSrc=photo('mapPhoto');
+  const mapsLink=v('f-maps');
+  if(mapSrc){
+    if(mapsLink){
+      mapEl.innerHTML=`<a href="${esc(mapsLink)}" target="_blank" rel="noopener"><img src="${mapSrc}" alt="mappa"></a>`;
+    } else {
+      mapEl.innerHTML=`<img src="${mapSrc}" alt="mappa" style="width:100%;height:100%;object-fit:cover;display:block">`;
+    }
+  } else {
+    mapEl.innerHTML=`<div class="p-map-ph"><span style="font-size:36px">🗺️</span><span>Carica l'immagine della mappa</span></div>`;
+  }
+
+  // Caption
+  document.getElementById('pv-caption').innerHTML=`<span>📍</span>&nbsp;${esc(t.cap)}`;
+
+  // Index
+  document.getElementById('pv-idx-title').textContent=t.idx;
+  const idxEl=document.getElementById('pv-idx-items');
+  idxEl.innerHTML=t.pages.map((p,i)=>{
+    if(!tog('tog-p'+(i+2)))return'';
+    return`<div class="p-idx-item"><span class="idx-icon">${p.icon}</span><span class="idx-title">${p.title}</span><span class="idx-page">${t.pg} ${p.n}</span></div>`;
+  }).join('');
+
+  // Section pages
+  const container=document.getElementById('pv-pages');
+  const cfgs=[
+    {key:'p2',hasLink:true},
+    {key:'p3',hasLink:false},
+    {key:'p4',hasLink:false},
+    {key:'p5',hasLink:false},
+  ];
+  container.innerHTML=cfgs.map((cfg,i)=>{
+    if(!tog('tog-'+cfg.key))return'';
+    const pg=t.pages[i];
+    const k=cfg.key;
+    const lurl=cfg.hasLink?v(k+'lurl'):'';
+    const llbl=cfg.hasLink?v(k+'llbl'):'';
+    const notes=v(k+'notes');
+
+    return`<div class="pp" id="pp-${k}">
+  <div class="pp-inner">
+    <div class="p-sec-header">
+      <div class="p-sec-title">${pg.icon} ${pg.title}</div>
+      <div class="p-sec-badge">${t.pg} ${pg.n}</div>
+    </div>
+
+    <div class="p-step">
+      <div class="p-step-lbl">${t.s1}</div>
+      <div class="p-step-grid">
+        <div class="p-step-col">
+          ${photoCell(k+'s1l',t.s1+' sx')}
+          <div class="p-text">${esc(v(k+'s1lt'))}</div>
+        </div>
+        <div class="p-step-col">
+          ${photoCell(k+'s1r',t.s1+' dx')}
+          <div class="p-text">${esc(v(k+'s1rt'))}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-step">
+      <div class="p-step-lbl">${t.s2}</div>
+      <div class="p-step-grid">
+        <div class="p-step-col">
+          ${photoCell(k+'s2l',t.s2+' sx')}
+          <div class="p-text">${esc(v(k+'s2lt'))}</div>
+        </div>
+        <div class="p-step-col">
+          ${photoCell(k+'s2r',t.s2+' dx')}
+          <div class="p-text">${esc(v(k+'s2rt'))}</div>
+        </div>
+      </div>
+    </div>
+
+    ${notes?`<div class="p-notes"><div class="p-notes-lbl">${t.notes}</div><div class="p-notes-text">${esc(notes)}</div></div>`:''}
+
+    ${cfg.hasLink&&lurl?`<a class="p-link" href="${esc(lurl)}" target="_blank" rel="noopener">🔗 ${esc(llbl||lurl)}</a>`:''}
+
+    <div class="p-footer" style="margin-top:auto">
+      <span class="p-footer-brand">SEVENHOME PROPERTIES</span>
+      <span class="p-footer-page">${pg.n}</span>
+    </div>
+  </div>
+</div>`;
+  }).join('');
+}
+
+// ======================================================
+// PDF EXPORT
+// ======================================================
+
+// Returns position of el relative to pageEl in px
+function elRect(el, pageEl){
+  const er=el.getBoundingClientRect();
+  const pr=pageEl.getBoundingClientRect();
+  return{x:er.left-pr.left, y:er.top-pr.top, w:er.width, h:er.height};
+}
+
+async function generatePDF(){
+  const {jsPDF}=window.jspdf;
+  const overlay=document.getElementById('pdf-loading');
+  const msgEl=document.getElementById('pdf-msg');
+  overlay.classList.add('active');
+
+  // A4 pixel dimensions (794×1123) → mm (210×297)
+  const A4W=210, A4H=297;
+  const PX_W=794, PX_H=1123;
+  const scaleX=A4W/PX_W, scaleY=A4H/PX_H;
+
+  try{
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+
+    const pages=[];
+    const p1=document.getElementById('pp1');
+    if(p1)pages.push({el:p1,label:'Copertina'});
+
+    const t=T[S.lang];
+    ['p2','p3','p4','p5'].forEach((k,i)=>{
+      if(tog('tog-'+k)){
+        const el=document.getElementById('pp-'+k);
+        if(el)pages.push({el,label:t.pages[i].title});
+      }
+    });
+
+    for(let i=0;i<pages.length;i++){
+      const {el,label}=pages[i];
+      msgEl.textContent=`Elaborazione: ${label} (${i+1}/${pages.length})…`;
+
+      // Scroll page into view so getBoundingClientRect is accurate
+      el.scrollIntoView({block:'nearest'});
+      await new Promise(r=>setTimeout(r,80));
+
+      // Collect all link annotations BEFORE html2canvas
+      const annotations=[];
+      el.querySelectorAll('a[href]').forEach(a=>{
+        const href=a.getAttribute('href');
+        if(!href||href==='#')return;
+        const r=elRect(a,el);
+        if(r.w>0&&r.h>0){
+          annotations.push({
+            x: r.x*scaleX,
+            y: r.y*scaleY,
+            w: r.w*scaleX,
+            h: r.h*scaleY,
+            url: href,
+          });
+        }
+      });
+
+      const canvas=await html2canvas(el,{
+        scale:2,
+        useCORS:true,
+        allowTaint:true,
+        backgroundColor:'#ffffff',
+        width:PX_W,
+        height:PX_H,
+        logging:false,
+      });
+
+      const imgData=canvas.toDataURL('image/jpeg',0.92);
+      if(i>0)pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,0,A4W,A4H);
+
+      // Add clickable link annotations on top of the image
+      annotations.forEach(ann=>{
+        pdf.link(ann.x, ann.y, ann.w, ann.h, {url: ann.url});
+      });
+    }
+
+    const addrSlug=(v('f-address')||'checkin')
+      .replace(/[^a-zA-Z0-9\s]/g,'')
+      .trim()
+      .replace(/\s+/g,'_')
+      .substring(0,28);
+    pdf.save(`checkin_${addrSlug}_${S.lang}.pdf`);
+  }catch(err){
+    console.error(err);
+    alert('Errore durante la generazione del PDF:\n'+err.message);
+  }finally{
+    overlay.classList.remove('active');
+  }
+}
+
+// ======================================================
+// PROJECTS — SAVE / LOAD / DELETE
+// ======================================================
+const STORAGE_KEY = 'sh_projects';
+const FIELD_IDS = [
+  'f-city','f-address','f-maps',
+  'p2s1lt','p2s1rt','p2s2lt','p2s2rt','p2notes','p2lurl','p2llbl',
+  'p3s1lt','p3s1rt','p3s2lt','p3s2rt','p3notes',
+  'p4s1lt','p4s1rt','p4s2lt','p4s2rt','p4notes',
+  'p5s1lt','p5s1rt','p5s2lt','p5s2rt','p5notes',
+];
+const TOGGLE_IDS = ['tog-p2','tog-p3','tog-p4','tog-p5'];
+
+function getProjects(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); }
+  catch(e){ return []; }
+}
+function setProjects(list){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function openProjects(){
+  renderProjectList();
+  document.getElementById('proj-overlay').classList.add('open');
+}
+function closeProjects(){
+  document.getElementById('proj-overlay').classList.remove('open');
+}
+
+function renderProjectList(){
+  const list = getProjects();
+  const el = document.getElementById('proj-list');
+  if(!list.length){
+    el.innerHTML = '<div class="proj-empty">Nessun progetto salvato.<br>Premi <strong>Salva</strong> per aggiungerne uno.</div>';
+    return;
+  }
+  el.innerHTML = list.slice().reverse().map(p => {
+    const date = new Date(p.savedAt).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const isCurrent = p.id === S.currentProjectId;
+    return `<div class="proj-card" id="card-${p.id}" style="${isCurrent?'border-color:#C9A84C;background:#fffdf5':''}">
+      <div class="proj-card-icon">${isCurrent?'📂':'🏠'}</div>
+      <div class="proj-card-info" id="card-info-${p.id}">
+        <div class="proj-card-name">${esc(p.name)}</div>
+        <div class="proj-card-meta">${date} &nbsp;·&nbsp; ${p.lang}${isCurrent?' &nbsp;·&nbsp; <span style="color:#C9A84C;font-weight:600">in uso</span>':''}</div>
+      </div>
+      <div class="proj-card-actions">
+        <button class="proj-load-btn" onclick="loadProject('${p.id}')">${isCurrent?'Ricarica':'Carica'}</button>
+        <button class="proj-load-btn" style="background:#fff;color:#1A1A2E" onclick="startRename('${p.id}')" title="Rinomina">✏️</button>
+        <button class="proj-del-btn" onclick="deleteProject('${p.id}')" title="Elimina">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startRename(id){
+  const list = getProjects();
+  const p = list.find(x=>x.id===id);
+  if(!p) return;
+  const infoEl = document.getElementById('card-info-'+id);
+  infoEl.innerHTML = `
+    <input class="proj-rename-input" id="rename-inp-${id}" value="${esc(p.name)}" maxlength="60" onkeydown="if(event.key==='Enter')confirmRename('${id}');if(event.key==='Escape')renderProjectList()">
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button class="proj-rename-btn" onclick="confirmRename('${id}')">Salva nome</button>
+      <button class="proj-rename-btn" style="background:#f0ede8;color:#666;border-color:#e0ddd8" onclick="renderProjectList()">Annulla</button>
+    </div>`;
+  setTimeout(()=>{ const inp=document.getElementById('rename-inp-'+id); if(inp){inp.focus();inp.select();} },30);
+}
+
+function confirmRename(id){
+  const inp = document.getElementById('rename-inp-'+id);
+  if(!inp) return;
+  const newName = inp.value.trim() || 'Progetto senza nome';
+  const list = getProjects();
+  const p = list.find(x=>x.id===id);
+  if(p){
+    p.name = newName;
+    setProjects(list);
+    if(id === S.currentProjectId){
+      S.currentProjectName = newName;
+      updateProjectBadge();
+    }
+  }
+  renderProjectList();
+  showToast('Nome aggiornato ✓');
+}
+
+function updateProjectBadge(){
+  const badge = document.getElementById('proj-badge');
+  const badgeName = document.getElementById('proj-badge-name');
+  if(S.currentProjectId && S.currentProjectName){
+    badgeName.textContent = S.currentProjectName;
+    badge.classList.add('visible');
+  } else {
+    badge.classList.remove('visible');
+  }
+}
+
+function clearCurrentProject(){
+  S.currentProjectId = null;
+  S.currentProjectName = null;
+  updateProjectBadge();
+}
+
+function saveProject(){
+  const city = v('f-city');
+  const addr = v('f-address');
+  const suggested = S.currentProjectName || [city,addr].filter(Boolean).join(' – ') || 'Nuovo progetto';
+  const inp = document.getElementById('save-name-input');
+  inp.value = suggested;
+  // Show/hide "Aggiorna" button depending on whether a project is loaded
+  const btnUpdate = document.getElementById('btn-update-proj');
+  const btnNew = inp.nextElementSibling; // "Salva come nuovo" is sibling after input... actually let me find by logic
+  if(S.currentProjectId){
+    btnUpdate.style.display = 'block';
+    btnUpdate.textContent = `Aggiorna "${S.currentProjectName}"`;
+  } else {
+    btnUpdate.style.display = 'none';
+  }
+  document.getElementById('save-dialog').classList.add('open');
+  setTimeout(()=>inp.select(), 50);
+}
+
+function closeSaveDialog(){
+  document.getElementById('save-dialog').classList.remove('open');
+}
+
+function confirmSave(update){
+  const name = document.getElementById('save-name-input').value.trim() || 'Progetto senza nome';
+  const fields = {};
+  FIELD_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) fields[id]=el.value; });
+  const toggles = {};
+  TOGGLE_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) toggles[id]=el.checked; });
+
+  let list = getProjects();
+
+  if(update && S.currentProjectId){
+    // Overwrite existing project
+    const idx = list.findIndex(x=>x.id===S.currentProjectId);
+    if(idx !== -1){
+      list[idx] = { ...list[idx], name, savedAt: new Date().toISOString(), lang:S.lang, logo:S.logo, photos:{...S.photos}, fields, toggles };
+      S.currentProjectName = name;
+      updateProjectBadge();
+      setProjects(list);
+      closeSaveDialog();
+      showToast('Progetto aggiornato ✓');
+      return;
+    }
+  }
+
+  // Save as new
+  const project = {
+    id: String(Date.now()),
+    name,
+    savedAt: new Date().toISOString(),
+    lang: S.lang,
+    logo: S.logo,
+    photos: {...S.photos},
+    fields,
+    toggles,
+  };
+  list.push(project);
+  setProjects(list);
+  S.currentProjectId = project.id;
+  S.currentProjectName = project.name;
+  updateProjectBadge();
+  closeSaveDialog();
+  showToast('Progetto salvato ✓');
+}
+
+function loadProject(id){
+  const list = getProjects();
+  const p = list.find(x=>x.id===id);
+  if(!p) return;
+
+  FIELD_IDS.forEach(fid=>{
+    const el=document.getElementById(fid);
+    if(el && p.fields[fid]!==undefined) el.value=p.fields[fid];
+  });
+  TOGGLE_IDS.forEach(tid=>{
+    const el=document.getElementById(tid);
+    if(el && p.toggles[tid]!==undefined) el.checked=p.toggles[tid];
+  });
+
+  S.logo = p.logo || null;
+  S.photos = {...(p.photos||{})};
+
+  const logoUp = document.getElementById('logo-up');
+  const logoPrev = document.getElementById('logo-prev');
+  if(logoUp && logoPrev){
+    if(S.logo){ logoPrev.src=S.logo; logoUp.classList.add('has-img'); }
+    else { logoPrev.src=''; logoUp.classList.remove('has-img'); }
+  }
+  document.querySelectorAll('.photo-up').forEach(wrap=>{
+    const inp=wrap.querySelector('input[type=file]');
+    if(!inp) return;
+    const oc=inp.getAttribute('onchange')||'';
+    const m=oc.match(/handlePhoto\(event,'([^']+)'\)/);
+    if(!m) return;
+    const key=m[1];
+    const prev=wrap.querySelector('.up-prev');
+    if(prev){
+      if(S.photos[key]){ prev.src=S.photos[key]; wrap.classList.add('has-img'); }
+      else { prev.src=''; wrap.classList.remove('has-img'); }
+    }
+  });
+
+  setLang(p.lang, document.querySelector(`.lang-btn[onclick="setLang('${p.lang}',this)"]`));
+
+  S.currentProjectId = p.id;
+  S.currentProjectName = p.name;
+  updateProjectBadge();
+
+  closeProjects();
+  render();
+  showToast('Progetto caricato ✓');
+}
+
+function deleteProject(id){
+  if(!confirm('Eliminare questo progetto?')) return;
+  const list = getProjects().filter(x=>x.id!==id);
+  setProjects(list);
+  if(S.currentProjectId === id) clearCurrentProject();
+  renderProjectList();
+}
+
+// Toast notification
+function showToast(msg){
+  let t=document.getElementById('sh-toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='sh-toast';
+    t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:#1A1A2E;color:#C9A84C;padding:10px 22px;border-radius:100px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.opacity='1';
+  t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{
+    t.style.opacity='0';
+    t.style.transform='translateX(-50%) translateY(12px)';
+  }, 2200);
+}
+
+// Allow Enter key in save dialog
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeSaveDialog();
+    closeProjects();
+  }
+});
+
+// ======================================================
+// CLEAR PHOTO / LOGO
+// ======================================================
+function clearPhoto(key, wrap){
+  delete S.photos[key];
+  wrap.classList.remove('has-img');
+  const prev=wrap.querySelector('.up-prev');
+  if(prev)prev.src='';
+  const inp=wrap.querySelector('input[type=file]');
+  if(inp)inp.value='';
+  render();
+}
+
+function clearLogo(wrap){
+  S.logo=null;
+  wrap.classList.remove('has-img');
+  const prev=wrap.querySelector('.up-prev');
+  if(prev)prev.src='';
+  const inp=wrap.querySelector('input[type=file]');
+  if(inp)inp.value='';
+  render();
+}
+
+// ======================================================
+// INIT
+// ======================================================
+updateFormLabels();
+render();
+
+// Add delete buttons to all photo upload areas
+document.querySelectorAll('.photo-up').forEach(wrap=>{
+  const inp=wrap.querySelector('input[type=file]');
+  if(!inp)return;
+  const oc=inp.getAttribute('onchange')||'';
+  const m=oc.match(/handlePhoto\(event,'([^']+)'\)/);
+  const isLogo=/handleLogo/.test(oc);
+  const key=m?m[1]:(isLogo?'__logo__':null);
+  if(!key)return;
+
+  const btn=document.createElement('button');
+  btn.className='del-btn';
+  btn.title='Rimuovi foto';
+  btn.innerHTML='✕';
+  btn.addEventListener('click',e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    if(key==='__logo__')clearLogo(wrap);
+    else clearPhoto(key,wrap);
+  });
+  wrap.appendChild(btn);
+});
+</script>
+</body>
+</html>

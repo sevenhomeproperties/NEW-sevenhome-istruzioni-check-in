@@ -843,64 +843,66 @@ function render(){
     mapEl.innerHTML=`<div class="p-map-ph"><span style="font-size:36px">🗺️</span><span>Carica l'immagine della mappa</span></div>${captionHtml}`;
   }
 
-  // Index
-  document.getElementById('pv-idx-title').textContent=t.idx;
-  const idxEl=document.getElementById('pv-idx-items');
-  idxEl.innerHTML=t.pages.map((p,i)=>{
-    if(!tog('tog-p'+(i+2)))return'';
-    return`<div class="p-idx-item"><span class="idx-icon">${p.icon}</span><span class="idx-title">${p.title}</span><span class="idx-page">${t.pg} ${p.n}</span></div>`;
-  }).join('');
-
-  // Section pages
-  const container=document.getElementById('pv-pages');
-  const cfgs=[
+  // Compute active sections with consecutive page numbers (cover = 1)
+  const allCfgs=[
     {key:'p2',hasLink:true},
     {key:'p3',hasLink:false},
     {key:'p4',hasLink:false},
     {key:'p5',hasLink:false},
   ];
-  container.innerHTML=cfgs.map((cfg,i)=>{
-    if(!tog('tog-'+cfg.key))return'';
-    const pg=t.pages[i];
+  let seqNum=1;
+  const activeCfgs=allCfgs.map((cfg,i)=>{
+    if(!tog('tog-'+cfg.key))return null;
+    seqNum++;
+    return{...cfg,pageIndex:i,pageNum:seqNum};
+  }).filter(Boolean);
+
+  // Index
+  document.getElementById('pv-idx-title').textContent=t.idx;
+  const idxEl=document.getElementById('pv-idx-items');
+  idxEl.innerHTML=activeCfgs.map(cfg=>{
+    const pg=t.pages[cfg.pageIndex];
+    return`<div class="p-idx-item"><span class="idx-icon">${pg.icon}</span><span class="idx-title">${pg.title}</span><span class="idx-page">${t.pg} ${cfg.pageNum}</span></div>`;
+  }).join('');
+
+  // Section pages
+  const container=document.getElementById('pv-pages');
+  container.innerHTML=activeCfgs.map(cfg=>{
+    const pg=t.pages[cfg.pageIndex];
     const k=cfg.key;
     const lurl=cfg.hasLink?v(k+'lurl'):'';
     const llbl=cfg.hasLink?v(k+'llbl'):'';
     const notes=v(k+'notes');
 
+    // Step visibility: show step only if it has at least one photo or text
+    function stepBlock(sn,lbl){
+      const hasL=photo(k+'s'+sn+'l'), hasR=photo(k+'s'+sn+'r');
+      const txtL=v(k+'s'+sn+'lt'), txtR=v(k+'s'+sn+'rt');
+      if(!hasL&&!hasR&&!txtL&&!txtR)return'';
+      return`<div class="p-step">
+      <div class="p-step-lbl">${lbl}</div>
+      <div class="p-step-grid">
+        <div class="p-step-col">
+          ${photoCell(k+'s'+sn+'l',lbl+' sx')}
+          <div class="p-text">${esc(txtL)}</div>
+        </div>
+        <div class="p-step-col">
+          ${photoCell(k+'s'+sn+'r',lbl+' dx')}
+          <div class="p-text">${esc(txtR)}</div>
+        </div>
+      </div>
+    </div>`;
+    }
+
     return`<div class="pp" id="pp-${k}">
   <div class="pp-inner">
     <div class="p-sec-header">
       <div class="p-sec-title">${pg.icon} ${pg.title}</div>
-      <div class="p-sec-badge">${t.pg} ${pg.n}</div>
+      <div class="p-sec-badge">${t.pg} ${cfg.pageNum}</div>
     </div>
 
-    <div class="p-step">
-      <div class="p-step-lbl">${t.s1}</div>
-      <div class="p-step-grid">
-        <div class="p-step-col">
-          ${photoCell(k+'s1l',t.s1+' sx')}
-          <div class="p-text">${esc(v(k+'s1lt'))}</div>
-        </div>
-        <div class="p-step-col">
-          ${photoCell(k+'s1r',t.s1+' dx')}
-          <div class="p-text">${esc(v(k+'s1rt'))}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="p-step">
-      <div class="p-step-lbl">${t.s2}</div>
-      <div class="p-step-grid">
-        <div class="p-step-col">
-          ${photoCell(k+'s2l',t.s2+' sx')}
-          <div class="p-text">${esc(v(k+'s2lt'))}</div>
-        </div>
-        <div class="p-step-col">
-          ${photoCell(k+'s2r',t.s2+' dx')}
-          <div class="p-text">${esc(v(k+'s2rt'))}</div>
-        </div>
-      </div>
-    </div>
+    ${stepBlock(1,t.s1)}
+    ${stepBlock(2,t.s2)}
 
     ${notes?`<div class="p-notes"><div class="p-notes-lbl">${t.notes}</div><div class="p-notes-text">${esc(notes)}</div></div>`:''}
 
@@ -908,7 +910,7 @@ function render(){
 
     <div class="p-footer" style="margin-top:auto">
       <span class="p-footer-brand">SEVENHOME PROPERTIES</span>
-      <span class="p-footer-page">${pg.n}</span>
+      <span class="p-footer-page">${cfg.pageNum}</span>
     </div>
   </div>
 </div>`;

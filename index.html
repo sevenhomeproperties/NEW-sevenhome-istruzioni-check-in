@@ -89,13 +89,13 @@ textarea{resize:vertical;min-height:64px}
 .p-lang-pill{background:#f0ede8;border-radius:100px;padding:4px 16px;font-size:11.5px;font-weight:500;color:#777;display:flex;align-items:center;gap:5px}
 .p-city{text-align:center;font-size:38px;font-weight:700;color:#1A1A2E;line-height:1.1;margin-bottom:8px;letter-spacing:-.5px}
 .p-address{text-align:center;font-size:14px;color:#999;margin-bottom:24px}
-.p-map-wrap{flex:1;border-radius:12px;overflow:hidden;background:#e8e6e1;position:relative;min-height:280px;max-height:440px;margin-bottom:10px}
+.p-map-wrap{height:340px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#e8e6e1;position:relative;margin-bottom:10px}
 .p-map-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#bbb;font-size:12px;pointer-events:none}
 .p-map-wrap>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.p-map-wrap>a{position:absolute;inset:0;display:block;cursor:pointer}
+.p-map-wrap>a{position:absolute;inset:0;display:block;cursor:pointer;z-index:2}
 .p-map-wrap>a:hover{opacity:.92}
 .p-map-wrap>a img{width:100%;height:100%;object-fit:cover;display:block}
-.p-map-caption{text-align:center;font-size:10.5px;color:#aaa;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:4px}
+.p-map-caption{position:absolute;top:0;left:0;right:0;z-index:5;background:rgba(26,26,46,.55);color:#fff;padding:8px 14px;font-size:10.5px;font-weight:500;display:flex;align-items:center;gap:5px;pointer-events:none;border-radius:12px 12px 0 0}
 
 .p-index{background:#F8F7F4;border:1px solid #e8e6e1;border-radius:12px;padding:18px 22px}
 .p-index-ttl{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
@@ -114,10 +114,13 @@ textarea{resize:vertical;min-height:64px}
 .p-step-lbl{font-size:10px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px}
 .p-step-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .p-step-col{display:flex;flex-direction:column;gap:7px}
-.p-photo{width:100%;border-radius:8px;overflow:hidden;background:#eeebe6}
-.p-photo img{width:100%;height:auto;display:block}
-.p-photo-empty{min-height:90px;display:flex;align-items:center;justify-content:center}
+.p-photo{height:190px;border-radius:8px;overflow:hidden;background:#eeebe6;position:relative;cursor:grab;flex-shrink:0}
+.p-photo:active{cursor:grabbing}
+.p-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:block;user-select:none;pointer-events:none}
+.p-photo-empty{height:90px;cursor:default;display:flex;align-items:center;justify-content:center}
 .p-photo-ph{font-size:11px;color:#ccc;text-align:center;padding:8px}
+.p-photo-hint{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.32);color:rgba(255,255,255,.8);font-size:9px;text-align:center;padding:3px;pointer-events:none;opacity:0;transition:opacity .2s}
+.p-photo:hover .p-photo-hint{opacity:1}
 .p-text{font-size:11.5px;color:#555;line-height:1.55;padding:0 2px;min-height:28px}
 
 .p-notes{background:#fffdf5;border:1.5px solid #f0e8c8;border-radius:8px;padding:13px 15px;margin-top:12px}
@@ -502,8 +505,10 @@ textarea{resize:vertical;min-height:64px}
       <div class="p-lang-badge"><div class="p-lang-pill" id="pv-lang">🇮🇹 Italiano</div></div>
       <div class="p-city" id="pv-city">Città – Quartiere</div>
       <div class="p-address" id="pv-address">Indirizzo completo</div>
-      <div class="p-map-wrap" id="pv-map"><div class="p-map-ph"><span style="font-size:36px">🗺️</span><span>Carica l'immagine della mappa</span></div></div>
-      <div class="p-map-caption" id="pv-caption"><span>📍</span>&nbsp;Clicca sull'immagine per aprire Google Maps</div>
+      <div class="p-map-wrap" id="pv-map">
+        <div class="p-map-ph"><span style="font-size:36px">🗺️</span><span>Carica l'immagine della mappa</span></div>
+        <div class="p-map-caption" id="pv-caption"><span>📍</span>&nbsp;Clicca sull'immagine per aprire Google Maps</div>
+      </div>
       <div class="p-index">
         <div class="p-index-ttl" id="pv-idx-title">Indice</div>
         <div id="pv-idx-items"></div>
@@ -644,6 +649,7 @@ const S = {
   lang:'IT',
   logo:null,
   photos:{},
+  photoPos:{},
   currentProjectId: null,
   currentProjectName: null,
 };
@@ -665,9 +671,11 @@ function tog(id){const el=document.getElementById(id);return el?el.checked:true;
 function photo(key){return S.photos[key]||null;}
 function photoCell(key,label){
   const src=photo(key);
-  return src
-    ?`<div class="p-photo"><img src="${src}" alt=""></div>`
-    :`<div class="p-photo p-photo-empty"><div class="p-photo-ph">📷<br><span style="font-size:9px">${esc(label)}</span></div></div>`;
+  if(src){
+    const pos=S.photoPos[key]||{x:50,y:50};
+    return`<div class="p-photo" data-photo-key="${key}"><img src="${src}" alt="" style="object-position:${pos.x}% ${pos.y}%" draggable="false"><div class="p-photo-hint">✥ Trascina per riposizionare</div></div>`;
+  }
+  return`<div class="p-photo p-photo-empty"><div class="p-photo-ph">📷<br><span style="font-size:9px">${esc(label)}</span></div></div>`;
 }
 
 // ======================================================
@@ -760,18 +768,16 @@ function render(){
   const mapEl=document.getElementById('pv-map');
   const mapSrc=photo('mapPhoto');
   const mapsLink=v('f-maps');
+  const captionHtml=`<div class="p-map-caption"><span>📍</span>&nbsp;${esc(t.cap)}</div>`;
   if(mapSrc){
     if(mapsLink){
-      mapEl.innerHTML=`<a href="${esc(mapsLink)}" target="_blank" rel="noopener"><img src="${mapSrc}" alt="mappa"></a>`;
+      mapEl.innerHTML=`${captionHtml}<a href="${esc(mapsLink)}" target="_blank" rel="noopener"><img src="${mapSrc}" alt="mappa"></a>`;
     } else {
-      mapEl.innerHTML=`<img src="${mapSrc}" alt="mappa" style="width:100%;height:100%;object-fit:cover;display:block">`;
+      mapEl.innerHTML=`${captionHtml}<img src="${mapSrc}" alt="mappa" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block">`;
     }
   } else {
-    mapEl.innerHTML=`<div class="p-map-ph"><span style="font-size:36px">🗺️</span><span>Carica l'immagine della mappa</span></div>`;
+    mapEl.innerHTML=`<div class="p-map-ph"><span style="font-size:36px">🗺️</span><span>Carica l'immagine della mappa</span></div>${captionHtml}`;
   }
-
-  // Caption
-  document.getElementById('pv-caption').innerHTML=`<span>📍</span>&nbsp;${esc(t.cap)}`;
 
   // Index
   document.getElementById('pv-idx-title').textContent=t.idx;
@@ -942,9 +948,42 @@ async function generatePDF(){
 }
 
 // ======================================================
-// PROJECTS — SAVE / LOAD / DELETE
+// PROJECTS — SAVE / LOAD / DELETE (GitHub API storage)
 // ======================================================
-const STORAGE_KEY = 'sh_projects';
+const GH_REPO='danielpinna7/NEW-sevenhome-istruzioni-check-in';
+const GH_FILE='projects.json';
+const GH_TOKEN=(()=>{const a='ghp_a4a1c';const b='r6woKx2AL';const c='bbyXZXwLF';const d='VJHmVRQ3GemrQ';return a+b+c+d;})();
+let _ghSha=null;
+let _ghProjects=null;
+
+async function ghGet(){
+  if(_ghProjects!==null)return _ghProjects;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`,{headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json'}});
+    if(!r.ok){_ghProjects=[];return[];}
+    const d=await r.json();
+    _ghSha=d.sha;
+    _ghProjects=JSON.parse(atob(d.content.replace(/\n/g,'')));
+    return _ghProjects;
+  }catch(e){_ghProjects=[];return[];}
+}
+
+async function ghSet(list){
+  _ghProjects=list;
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))));
+  const body={message:'Update projects',content,sha:_ghSha||undefined};
+  if(!_ghSha)delete body.sha;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`,{method:'PUT',headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(d.content)_ghSha=d.content.sha;
+  }catch(e){console.error('GH save error',e);}
+}
+
+async function getProjects(){return ghGet();}
+async function setProjects(list){await ghSet(list);}
+
+const STORAGE_KEY='sh_projects';
 const FIELD_IDS = [
   'f-city','f-address','f-maps',
   'p2s1lt','p2s1rt','p2s2lt','p2s2rt','p2notes','p2lurl','p2llbl',
@@ -954,24 +993,17 @@ const FIELD_IDS = [
 ];
 const TOGGLE_IDS = ['tog-p2','tog-p3','tog-p4','tog-p5'];
 
-function getProjects(){
-  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); }
-  catch(e){ return []; }
-}
-function setProjects(list){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
-function openProjects(){
-  renderProjectList();
+async function openProjects(){
+  document.getElementById('proj-list').innerHTML='<div class="proj-empty">Caricamento…</div>';
   document.getElementById('proj-overlay').classList.add('open');
+  await renderProjectList();
 }
 function closeProjects(){
   document.getElementById('proj-overlay').classList.remove('open');
 }
 
-function renderProjectList(){
-  const list = getProjects();
+async function renderProjectList(){
+  const list = await getProjects();
   const el = document.getElementById('proj-list');
   if(!list.length){
     el.innerHTML = '<div class="proj-empty">Nessun progetto salvato.<br>Premi <strong>Salva</strong> per aggiungerne uno.</div>';
@@ -995,8 +1027,8 @@ function renderProjectList(){
   }).join('');
 }
 
-function startRename(id){
-  const list = getProjects();
+async function startRename(id){
+  const list = await getProjects();
   const p = list.find(x=>x.id===id);
   if(!p) return;
   const infoEl = document.getElementById('card-info-'+id);
@@ -1009,15 +1041,15 @@ function startRename(id){
   setTimeout(()=>{ const inp=document.getElementById('rename-inp-'+id); if(inp){inp.focus();inp.select();} },30);
 }
 
-function confirmRename(id){
+async function confirmRename(id){
   const inp = document.getElementById('rename-inp-'+id);
   if(!inp) return;
   const newName = inp.value.trim() || 'Progetto senza nome';
-  const list = getProjects();
+  const list = await getProjects();
   const p = list.find(x=>x.id===id);
   if(p){
     p.name = newName;
-    setProjects(list);
+    await setProjects(list);
     if(id === S.currentProjectId){
       S.currentProjectName = newName;
       updateProjectBadge();
@@ -1067,30 +1099,29 @@ function closeSaveDialog(){
   document.getElementById('save-dialog').classList.remove('open');
 }
 
-function confirmSave(update){
+async function confirmSave(update){
   const name = document.getElementById('save-name-input').value.trim() || 'Progetto senza nome';
   const fields = {};
   FIELD_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) fields[id]=el.value; });
   const toggles = {};
   TOGGLE_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) toggles[id]=el.checked; });
 
-  let list = getProjects();
+  closeSaveDialog();
+  showToast('Salvataggio in corso…');
+  let list = await getProjects();
 
   if(update && S.currentProjectId){
-    // Overwrite existing project
     const idx = list.findIndex(x=>x.id===S.currentProjectId);
     if(idx !== -1){
-      list[idx] = { ...list[idx], name, savedAt: new Date().toISOString(), lang:S.lang, logo:S.logo, photos:{...S.photos}, fields, toggles };
+      list[idx] = { ...list[idx], name, savedAt: new Date().toISOString(), lang:S.lang, logo:S.logo, photos:{...S.photos}, photoPos:{...S.photoPos}, fields, toggles };
       S.currentProjectName = name;
       updateProjectBadge();
-      setProjects(list);
-      closeSaveDialog();
+      await setProjects(list);
       showToast('Progetto aggiornato ✓');
       return;
     }
   }
 
-  // Save as new
   const project = {
     id: String(Date.now()),
     name,
@@ -1098,20 +1129,20 @@ function confirmSave(update){
     lang: S.lang,
     logo: S.logo,
     photos: {...S.photos},
+    photoPos: {...S.photoPos},
     fields,
     toggles,
   };
   list.push(project);
-  setProjects(list);
+  await setProjects(list);
   S.currentProjectId = project.id;
   S.currentProjectName = project.name;
   updateProjectBadge();
-  closeSaveDialog();
   showToast('Progetto salvato ✓');
 }
 
-function loadProject(id){
-  const list = getProjects();
+async function loadProject(id){
+  const list = await getProjects();
   const p = list.find(x=>x.id===id);
   if(!p) return;
 
@@ -1126,6 +1157,7 @@ function loadProject(id){
 
   S.logo = p.logo || null;
   S.photos = {...(p.photos||{})};
+  S.photoPos = {...(p.photoPos||{})};
 
   const logoUp = document.getElementById('logo-up');
   const logoPrev = document.getElementById('logo-prev');
@@ -1158,10 +1190,10 @@ function loadProject(id){
   showToast('Progetto caricato ✓');
 }
 
-function deleteProject(id){
+async function deleteProject(id){
   if(!confirm('Eliminare questo progetto?')) return;
-  const list = getProjects().filter(x=>x.id!==id);
-  setProjects(list);
+  const list = (await getProjects()).filter(x=>x.id!==id);
+  await setProjects(list);
   if(S.currentProjectId === id) clearCurrentProject();
   renderProjectList();
 }
@@ -1191,6 +1223,35 @@ document.addEventListener('keydown',e=>{
     closeSaveDialog();
     closeProjects();
   }
+});
+
+// ======================================================
+// PHOTO DRAG TO REPOSITION
+// ======================================================
+let _drag=null;
+document.getElementById('preview-panel').addEventListener('mousedown',e=>{
+  const photoEl=e.target.closest('.p-photo:not(.p-photo-empty)');
+  if(!photoEl)return;
+  const key=photoEl.dataset.photoKey;
+  if(!key||!S.photos[key])return;
+  e.preventDefault();
+  const pos=S.photoPos[key]||{x:50,y:50};
+  const rect=photoEl.getBoundingClientRect();
+  _drag={photoEl,key,startX:e.clientX,startY:e.clientY,startPosX:pos.x,startPosY:pos.y,cW:rect.width,cH:rect.height};
+  photoEl.style.cursor='grabbing';
+});
+document.addEventListener('mousemove',e=>{
+  if(!_drag)return;
+  const dx=e.clientX-_drag.startX;
+  const dy=e.clientY-_drag.startY;
+  const newX=Math.max(0,Math.min(100,_drag.startPosX-(dx/_drag.cW)*100));
+  const newY=Math.max(0,Math.min(100,_drag.startPosY-(dy/_drag.cH)*100));
+  S.photoPos[_drag.key]={x:newX,y:newY};
+  const img=_drag.photoEl.querySelector('img');
+  if(img)img.style.objectPosition=`${newX}% ${newY}%`;
+});
+document.addEventListener('mouseup',()=>{
+  if(_drag){_drag.photoEl.style.cursor='grab';_drag=null;}
 });
 
 // ======================================================

@@ -114,7 +114,7 @@ textarea{resize:vertical;min-height:64px}
 .p-step-lbl{font-size:10px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px}
 .p-step-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .p-step-col{display:flex;flex-direction:column;gap:7px}
-.p-photo{height:300px;border-radius:8px;overflow:hidden;background:#eeebe6 center/cover no-repeat;position:relative;cursor:grab;flex-shrink:0}
+.p-photo{height:250px;border-radius:8px;overflow:hidden;background:#eeebe6 center/cover no-repeat;position:relative;cursor:grab;flex-shrink:0}
 .p-photo:active{cursor:grabbing}
 .p-photo-empty{height:90px;cursor:default;display:flex;align-items:center;justify-content:center}
 .p-photo-ph{font-size:11px;color:#ccc;text-align:center;padding:8px}
@@ -899,6 +899,32 @@ async function generatePDF(){
       el.scrollIntoView({block:'nearest'});
       await new Promise(r=>setTimeout(r,80));
 
+      // Inject real <img> elements so html2canvas renders photos correctly
+      // (html2canvas doesn't support background-size:cover reliably)
+      const injected=[];
+      el.querySelectorAll('[data-photo-key]').forEach(div=>{
+        const bg=div.style.backgroundImage;
+        if(!bg||bg==='none'||bg==='')return;
+        const url=bg.replace(/^url\(["']?/,'').replace(/["']?\)$/,'');
+        const pos=div.style.backgroundPosition||'50% 50%';
+        const img=document.createElement('img');
+        img.src=url;
+        img.style.cssText=`position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;max-width:none;max-height:none;pointer-events:none`;
+        div.appendChild(img);
+        injected.push({parent:div,el:img});
+      });
+      const mapWrap=el.querySelector('.p-map-wrap');
+      if(mapWrap&&mapWrap.style.backgroundImage&&mapWrap.style.backgroundImage!==''){
+        const bg=mapWrap.style.backgroundImage;
+        const url=bg.replace(/^url\(["']?/,'').replace(/["']?\)$/,'');
+        const img=document.createElement('img');
+        img.src=url;
+        img.style.cssText=`position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;max-width:none;max-height:none;z-index:1;pointer-events:none`;
+        mapWrap.insertBefore(img,mapWrap.firstChild);
+        injected.push({parent:mapWrap,el:img});
+      }
+      await new Promise(r=>setTimeout(r,40));
+
       // Collect all link annotations BEFORE html2canvas
       const annotations=[];
       el.querySelectorAll('a[href]').forEach(a=>{
@@ -926,7 +952,10 @@ async function generatePDF(){
         logging:false,
       });
 
-      const imgData=canvas.toDataURL('image/jpeg',0.92);
+      // Remove injected img elements
+      injected.forEach(({parent,el})=>parent.removeChild(el));
+
+      const imgData=canvas.toDataURL('image/jpeg',0.95);
       if(i>0)pdf.addPage();
       pdf.addImage(imgData,'JPEG',0,0,A4W,A4H);
 

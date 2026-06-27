@@ -295,6 +295,30 @@ textarea{resize:vertical;min-height:64px}
 .am-df input:focus,.am-df textarea:focus,.am-df select:focus{border-color:#C9A84C}
 .am-df textarea{resize:vertical;min-height:72px}
 .am-dialog-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.fg-row{display:flex;gap:8px;margin-bottom:8px}.fg-row input{flex:1;font-family:'Inter',sans-serif;font-size:13px;border:1.5px solid #e0ddd8;border-radius:8px;padding:8px 10px;outline:none;color:#1A1A2E}.fg-row input:focus{border-color:#C9A84C}
+/* ===== PAGE 6 – Info ===== */
+.p6-block{background:#F8F7F4;border:1px solid #e8e6e1;border-radius:12px;padding:16px 20px;margin-bottom:12px}
+.p6-block-ttl{font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.p6-wifi-inner{display:flex;gap:16px;align-items:center}
+.p6-wifi-qr{width:90px;height:90px;flex-shrink:0;border-radius:8px;overflow:hidden;background:#e8e6e1;display:flex;align-items:center;justify-content:center;font-size:10px;color:#bbb;text-align:center}
+.p6-wifi-qr img{width:100%;height:100%;object-fit:cover}
+.p6-wifi-fields{flex:1;display:flex;flex-direction:column;gap:8px}
+.p6-wifi-row{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e8e6e1;border-radius:8px;padding:8px 12px}
+.p6-wifi-lbl{font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px;min-width:56px}
+.p6-wifi-val{font-size:12.5px;font-weight:600;color:#1A1A2E;flex:1;word-break:break-all}
+.p6-copy-btn{width:26px;height:26px;border-radius:6px;border:1.5px solid #e8e6e1;background:#fff;color:#888;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.p6-copy-btn:hover{border-color:#C9A84C;color:#C9A84C}
+.p6-phone-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #e8e6e1}
+.p6-phone-row:last-child{border-bottom:none}
+.p6-phone-name{font-size:12px;font-weight:600;color:#1A1A2E;flex:1}
+.p6-phone-num{font-size:12px;color:#555;font-weight:500}
+.p6-wa-btn{display:inline-flex;align-items:center;gap:5px;background:#25D366;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;text-decoration:none;flex-shrink:0;transition:opacity .15s}
+.p6-wa-btn:hover{opacity:.85}
+.p6-stay-link{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #e8e6e1;border-radius:10px;padding:12px 16px;text-decoration:none;color:#1A1A2E;transition:all .18s}
+.p6-stay-link:hover{border-color:#C9A84C}
+.p6-stay-icon{font-size:18px;flex-shrink:0}
+.p6-stay-lbl{font-size:13px;font-weight:600;flex:1}
+.p6-stay-arr{color:#C9A84C;font-weight:700;font-size:14px}
 .am-loading{text-align:center;padding:50px;color:#bbb;font-size:13px;grid-column:1/-1}
 @media(max-width:640px){
   .am-hd{padding:10px 14px;flex-wrap:wrap;gap:8px}
@@ -452,6 +476,7 @@ textarea{resize:vertical;min-height:64px}
           <label class="tog-row"><input type="checkbox" id="tog-p3" checked onchange="render()"> 🔑 Pag. 3 — <span id="tl-p3">Ritiro chiavi</span></label>
           <label class="tog-row"><input type="checkbox" id="tog-p4" checked onchange="render()"> 🚪 Pag. 4 — <span id="tl-p4">Accesso all'appartamento</span></label>
           <label class="tog-row"><input type="checkbox" id="tog-p5" checked onchange="render()"> 🅿️ Pag. 5 — <span id="tl-p5">Parcheggio</span></label>
+          <label class="tog-row"><input type="checkbox" id="tog-p6" onchange="render()"> 📡 Pag. 6 — <span id="tl-p6">Informazioni Utili</span></label>
         </div>
       </div>
     </div>
@@ -600,6 +625,34 @@ textarea{resize:vertical;min-height:64px}
     </div>
   </div>
 
+  <!-- ===== PAGE 6 – Informazioni Utili ===== -->
+  <div class="form-section" id="fs-p6">
+    <h3 id="fh-p6">📡 Pagina 6 — Informazioni Utili</h3>
+
+    <div class="fg-group">
+      <h4>📶 WiFi</h4>
+      <div class="fg"><label class="lbl">QR Code WiFi</label>
+        <div class="photo-up"><input type="file" accept="image/*" onchange="handlePhoto(event,'p6qr')"><span class="up-icon">📷</span><span class="up-lbl">Carica QR Code</span><img class="up-prev" id="p6qr-prev"></div>
+      </div>
+      <div class="fg"><label class="lbl">Nome Rete (SSID)</label><input type="text" id="p6ssid" placeholder="es. SevenHome_WiFi" oninput="render()"></div>
+      <div class="fg"><label class="lbl">Password WiFi</label><input type="text" id="p6pass" placeholder="password..." oninput="render()"></div>
+    </div>
+
+    <div class="fg-group">
+      <h4>📞 Numeri Utili</h4>
+      <div class="fg-row"><input type="text" id="p6t1n" placeholder="Nome contatto" oninput="render()"><input type="tel" id="p6t1p" placeholder="+39 000 000 0000" oninput="render()"></div>
+      <div class="fg-row"><input type="text" id="p6t2n" placeholder="Nome contatto" oninput="render()"><input type="tel" id="p6t2p" placeholder="+39 000 000 0000" oninput="render()"></div>
+      <div class="fg-row"><input type="text" id="p6t3n" placeholder="Nome contatto" oninput="render()"><input type="tel" id="p6t3p" placeholder="+39 000 000 0000" oninput="render()"></div>
+      <div class="fg-row"><input type="text" id="p6t4n" placeholder="Nome contatto" oninput="render()"><input type="tel" id="p6t4p" placeholder="+39 000 000 0000" oninput="render()"></div>
+    </div>
+
+    <div class="fg-group">
+      <h4>🔗 Link Informazioni Soggiorno</h4>
+      <div class="fg"><label class="lbl">URL</label><input type="url" id="p6lurl" placeholder="https://..." oninput="render()"></div>
+      <div class="fg"><label class="lbl">Etichetta</label><input type="text" id="p6llbl" placeholder="es. Guida completa al soggiorno" oninput="render()"></div>
+    </div>
+  </div>
+
 </div><!-- /form-panel -->
 
 <!-- ===== PREVIEW PANEL ===== -->
@@ -715,47 +768,62 @@ const T = {
   IT:{flag:'🇮🇹',name:'Italiano',idx:'Indice',pg:'Pagina',pdf:'Genera PDF',
     s1:'Step 1',s2:'Step 2',notes:'Note',links:'Link Utili',
     cap:"Clicca sull'immagine per aprire Google Maps",
+    wifi:'WiFi',wifiNet:'Rete',wifiPass:'Password',copy:'Copia',copied:'Copiato!',
+    phones:'Numeri Utili',stayInfo:'Informazioni Soggiorno',wa:'WhatsApp',
     pages:[
       {icon:'🏢',title:"Accesso all'edificio",n:2},
       {icon:'🔑',title:'Ritiro chiavi',n:3},
       {icon:'🚪',title:"Accesso all'appartamento",n:4},
-      {icon:'🅿️',title:'Parcheggio',n:5}
+      {icon:'🅿️',title:'Parcheggio',n:5},
+      {icon:'📡',title:'Informazioni Utili',n:6}
     ]},
   EN:{flag:'🇬🇧',name:'English',idx:'Index',pg:'Page',pdf:'Generate PDF',
     s1:'Step 1',s2:'Step 2',notes:'Notes',links:'Useful Links',
     cap:'Click the image to open Google Maps',
+    wifi:'WiFi',wifiNet:'Network',wifiPass:'Password',copy:'Copy',copied:'Copied!',
+    phones:'Useful Numbers',stayInfo:'Stay Information',wa:'WhatsApp',
     pages:[
       {icon:'🏢',title:'Building Access',n:2},
       {icon:'🔑',title:'Key Collection',n:3},
       {icon:'🚪',title:'Apartment Access',n:4},
-      {icon:'🅿️',title:'Parking',n:5}
+      {icon:'🅿️',title:'Parking',n:5},
+      {icon:'📡',title:'Useful Info',n:6}
     ]},
   DE:{flag:'🇩🇪',name:'Deutsch',idx:'Inhaltsverzeichnis',pg:'Seite',pdf:'PDF erstellen',
     s1:'Schritt 1',s2:'Schritt 2',notes:'Hinweise',links:'Nützliche Links',
     cap:'Klicken Sie auf das Bild, um Google Maps zu öffnen',
+    wifi:'WLAN',wifiNet:'Netzwerk',wifiPass:'Passwort',copy:'Kopieren',copied:'Kopiert!',
+    phones:'Nützliche Nummern',stayInfo:'Aufenthaltsinformationen',wa:'WhatsApp',
     pages:[
       {icon:'🏢',title:'Gebäudezugang',n:2},
       {icon:'🔑',title:'Schlüsselabholung',n:3},
       {icon:'🚪',title:'Wohnungszugang',n:4},
-      {icon:'🅿️',title:'Parken',n:5}
+      {icon:'🅿️',title:'Parken',n:5},
+      {icon:'📡',title:'Nützliche Infos',n:6}
     ]},
   FR:{flag:'🇫🇷',name:'Français',idx:'Index',pg:'Page',pdf:'Générer le PDF',
     s1:'Étape 1',s2:'Étape 2',notes:'Notes',links:'Liens utiles',
     cap:"Cliquez sur l'image pour ouvrir Google Maps",
+    wifi:'WiFi',wifiNet:'Réseau',wifiPass:'Mot de passe',copy:'Copier',copied:'Copié!',
+    phones:'Numéros utiles',stayInfo:'Infos séjour',wa:'WhatsApp',
     pages:[
       {icon:'🏢',title:"Accès à l'immeuble",n:2},
       {icon:'🔑',title:'Récupération des clés',n:3},
       {icon:'🚪',title:"Accès à l'appartement",n:4},
-      {icon:'🅿️',title:'Parking',n:5}
+      {icon:'🅿️',title:'Parking',n:5},
+      {icon:'📡',title:'Infos utiles',n:6}
     ]},
   ES:{flag:'🇪🇸',name:'Español',idx:'Índice',pg:'Página',pdf:'Generar PDF',
     s1:'Paso 1',s2:'Paso 2',notes:'Notas',links:'Enlaces útiles',
     cap:'Haz clic en la imagen para abrir Google Maps',
+    wifi:'WiFi',wifiNet:'Red',wifiPass:'Contraseña',copy:'Copiar',copied:'¡Copiado!',
+    phones:'Números útiles',stayInfo:'Info estancia',wa:'WhatsApp',
     pages:[
       {icon:'🏢',title:'Acceso al edificio',n:2},
       {icon:'🔑',title:'Recogida de llaves',n:3},
       {icon:'🚪',title:'Acceso al apartamento',n:4},
-      {icon:'🅿️',title:'Aparcamiento',n:5}
+      {icon:'🅿️',title:'Aparcamiento',n:5},
+      {icon:'📡',title:'Info útil',n:6}
     ]}
 };
 
@@ -966,6 +1034,7 @@ function render(){
     {key:'p3',hasLink:false},
     {key:'p4',hasLink:false},
     {key:'p5',hasLink:false},
+    {key:'p6',isInfo:true},
   ];
   let seqNum=1;
   const activeCfgs=allCfgs.map((cfg,i)=>{
@@ -1011,6 +1080,56 @@ function render(){
     </div>`;
     }
 
+    // Page 6 – Info (special layout)
+    if(cfg.isInfo){
+      const ssid=v('p6ssid'), pass=v('p6pass');
+      const qrSrc=photo('p6qr');
+      const lurl6=v('p6lurl'), llbl6=v('p6llbl');
+      const phones=[[v('p6t1n'),v('p6t1p')],[v('p6t2n'),v('p6t2p')],[v('p6t3n'),v('p6t3p')],[v('p6t4n'),v('p6t4p')]].filter(([n,p])=>n||p);
+      const waNum=p=>p.replace(/[\s\-\+\(\)]/g,'');
+      return`<div class="pp" id="pp-p6">
+  <div class="pp-inner">
+    <div class="p-sec-header">
+      <div class="p-sec-title">${pg.icon} ${pg.title}</div>
+      <div class="p-sec-badge">${t.pg} ${cfg.pageNum}</div>
+    </div>
+
+    ${ssid||pass||qrSrc?`<div class="p6-block">
+      <div class="p6-block-ttl">📶 ${t.wifi}</div>
+      <div class="p6-wifi-inner">
+        ${qrSrc?`<div class="p6-wifi-qr"><img src="${qrSrc}" alt="QR"></div>`:`<div class="p6-wifi-qr" style="font-size:9px;padding:4px">QR<br>WiFi</div>`}
+        <div class="p6-wifi-fields">
+          ${ssid?`<div class="p6-wifi-row"><span class="p6-wifi-lbl">${t.wifiNet}</span><span class="p6-wifi-val">${esc(ssid)}</span></div>`:''}
+          ${pass?`<div class="p6-wifi-row"><span class="p6-wifi-lbl">${t.wifiPass}</span><span class="p6-wifi-val" id="p6-pass-val">${esc(pass)}</span><button class="p6-copy-btn" onclick="copyWifiPass()" title="${t.copy}">📋</button></div>`:''}
+        </div>
+      </div>
+    </div>`:''}
+
+    ${phones.length?`<div class="p6-block">
+      <div class="p6-block-ttl">📞 ${t.phones}</div>
+      ${phones.map(([n,p])=>`<div class="p6-phone-row">
+        <span class="p6-phone-name">${esc(n)}</span>
+        <span class="p6-phone-num">${esc(p)}</span>
+        ${p?`<a class="p6-wa-btn" href="https://wa.me/${waNum(p)}" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.522 5.851L.057 23.885l6.186-1.438A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.887 9.887 0 01-5.031-1.375l-.361-.214-3.741.981.999-3.648-.235-.374A9.86 9.86 0 012.106 12C2.106 6.58 6.58 2.106 12 2.106c5.421 0 9.894 4.474 9.894 9.894 0 5.421-4.473 9.894-9.894 9.894z"/></svg>
+          ${t.wa}</a>`:''}
+      </div>`).join('')}
+    </div>`:''}
+
+    ${lurl6?`<a class="p6-stay-link" href="${esc(lurl6)}" target="_blank" rel="noopener">
+      <span class="p6-stay-icon">🔗</span>
+      <span class="p6-stay-lbl">${esc(llbl6||lurl6)}</span>
+      <span class="p6-stay-arr">→</span>
+    </a>`:''}
+
+    <div class="p-footer" style="margin-top:auto">
+      <span class="p-footer-brand">SEVENHOME PROPERTIES</span>
+      <span class="p-footer-page">${cfg.pageNum}</span>
+    </div>
+  </div>
+</div>`;
+    }
+
     return`<div class="pp" id="pp-${k}">
   <div class="pp-inner">
     <div class="p-sec-header">
@@ -1032,6 +1151,24 @@ function render(){
   </div>
 </div>`;
   }).join('');
+}
+
+function copyWifiPass(){
+  const el=document.getElementById('p6-pass-val');
+  if(!el)return;
+  const pass=el.textContent;
+  const t=T[S.lang];
+  navigator.clipboard.writeText(pass).then(()=>{
+    const btn=el.nextElementSibling;
+    if(btn){btn.textContent='✓';btn.style.color='#34A853';setTimeout(()=>{btn.textContent='📋';btn.style.color='';},1500);}
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=pass;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn=el.nextElementSibling;
+    if(btn){btn.textContent='✓';btn.style.color='#34A853';setTimeout(()=>{btn.textContent='📋';btn.style.color='';},1500);}
+  });
 }
 
 // ======================================================
@@ -1076,8 +1213,10 @@ const FIELD_IDS = [
   'p3s1lt','p3s1rt','p3s2lt','p3s2rt','p3notes',
   'p4s1lt','p4s1rt','p4s2lt','p4s2rt','p4notes',
   'p5s1lt','p5s1rt','p5s2lt','p5s2rt','p5notes',
+  'p6ssid','p6pass','p6lurl','p6llbl',
+  'p6t1n','p6t1p','p6t2n','p6t2p','p6t3n','p6t3p','p6t4n','p6t4p',
 ];
-const TOGGLE_IDS = ['tog-p2','tog-p3','tog-p4','tog-p5'];
+const TOGGLE_IDS = ['tog-p2','tog-p3','tog-p4','tog-p5','tog-p6'];
 
 async function openProjects(){
   document.getElementById('proj-list').innerHTML='<div class="proj-empty">Caricamento…</div>';
@@ -1683,7 +1822,7 @@ async function _buildPDF(onMsg){
   const pages=[];
   const p1=document.getElementById('pp1');
   if(p1)pages.push({el:p1,label:'Copertina'});
-  ['p2','p3','p4','p5'].forEach((k,i)=>{
+  ['p2','p3','p4','p5','p6'].forEach((k,i)=>{
     if(tog('tog-'+k)){const el=document.getElementById('pp-'+k);if(el)pages.push({el,label:t.pages[i].title});}
   });
   for(let i=0;i<pages.length;i++){

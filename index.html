@@ -222,6 +222,80 @@ textarea{resize:vertical;min-height:64px}
 .spinner{width:38px;height:38px;border:3px solid rgba(201,168,76,.25);border-top-color:#C9A84C;border-radius:50%;animation:spin .75s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+/* ===== ARCHIVIO PROGETTI (Supabase) ===== */
+.am-ov{position:fixed;inset:0;background:#F8F7F4;z-index:8000;display:none;flex-direction:column}
+.am-ov.open{display:flex}
+.am-hd{background:#1A1A2E;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
+.am-hd-l{display:flex;align-items:center;gap:12px;min-width:0}
+.am-back{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);color:#fff;padding:7px 14px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:none;align-items:center;gap:6px;transition:background .15s;white-space:nowrap}
+.am-back:hover{background:rgba(255,255,255,.18)}
+.am-hd-title{font-size:17px;font-weight:700;color:#C9A84C;letter-spacing:-.2px;white-space:nowrap}
+.am-hd-r{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.am-search{font-family:'Inter',sans-serif;font-size:13px;border:1.5px solid rgba(255,255,255,.18);border-radius:8px;padding:7px 14px;background:rgba(255,255,255,.08);color:#fff;outline:none;width:210px;transition:border-color .15s}
+.am-search:focus{border-color:#C9A84C}
+.am-search::placeholder{color:rgba(255,255,255,.4)}
+.am-sort{font-family:'Inter',sans-serif;font-size:12.5px;border:1.5px solid rgba(255,255,255,.18);border-radius:8px;padding:7px 12px;background:rgba(255,255,255,.08);color:#fff;outline:none;cursor:pointer}
+.am-sort option{background:#1A1A2E;color:#fff}
+.am-btn-gold{background:#C9A84C;color:#1A1A2E;border:none;padding:8px 18px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s;display:flex;align-items:center;gap:6px}
+.am-btn-gold:hover{background:#d4b35e}
+.am-btn-close{width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.am-btn-close:hover{background:rgba(255,255,255,.18)}
+.am-content{flex:1;overflow-y:auto;padding:32px}
+.am-content::-webkit-scrollbar{width:6px}
+.am-content::-webkit-scrollbar-thumb{background:#c0bbb3;border-radius:3px}
+.am-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
+.am-empty{text-align:center;color:#bbb;font-size:14px;padding:70px 0;grid-column:1/-1}
+.am-empty .am-empty-icon{font-size:48px;display:block;margin-bottom:12px}
+.am-empty p{font-size:13px;margin-top:6px}
+.am-card{background:#fff;border:1.5px solid #e8e6e1;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:12px;transition:all .18s;cursor:pointer;position:relative}
+.am-card:hover{border-color:#C9A84C;box-shadow:0 4px 20px rgba(201,168,76,.15);transform:translateY(-2px)}
+.am-card-top{display:flex;align-items:flex-start;gap:14px}
+.am-card-icon{width:44px;height:44px;background:#F8F7F4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.am-card-name{font-size:15px;font-weight:700;color:#1A1A2E;line-height:1.3;margin-bottom:4px}
+.am-card-desc{font-size:12px;color:#999;line-height:1.45}
+.am-card-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#aaa;padding-top:10px;border-top:1px solid #ebe9e4}
+.am-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.am-card-count{font-size:12.5px;color:#888;font-weight:500}
+.am-card-open{padding:7px 16px;background:#1A1A2E;color:#C9A84C;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s}
+.am-card-open:hover{background:#2a2a42}
+.am-card-del{width:30px;height:30px;border-radius:8px;border:1.5px solid #e8e6e1;background:#fff;color:#ccc;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.am-card-del:hover{border-color:#e74c3c;color:#e74c3c}
+.am-detail-wrap{display:flex;flex-direction:column;gap:16px}
+.am-detail-top{background:#fff;border:1.5px solid #e8e6e1;border-radius:12px;padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.am-detail-title{font-size:20px;font-weight:700;color:#1A1A2E;letter-spacing:-.2px}
+.am-detail-desc{font-size:13px;color:#999;margin-top:4px}
+.am-detail-meta{display:flex;gap:14px;font-size:11.5px;color:#aaa;margin-top:8px;flex-wrap:wrap}
+.am-detail-actions{display:flex;gap:8px;flex-shrink:0}
+.am-btn-dark{background:#1A1A2E;color:#C9A84C;border:none;padding:9px 16px;border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:background .15s}
+.am-btn-dark:hover{background:#2a2a42}
+.am-files-wrap{background:#fff;border:1.5px solid #e8e6e1;border-radius:12px;overflow:hidden}
+.am-files-head{display:grid;grid-template-columns:1fr 90px 90px 110px;padding:10px 20px;background:#F8F7F4;border-bottom:1.5px solid #e8e6e1;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+.am-file-row{display:grid;grid-template-columns:1fr 90px 90px 110px;padding:13px 20px;border-bottom:1px solid #ebe9e4;align-items:center;transition:background .12s}
+.am-file-row:last-child{border-bottom:none}
+.am-file-row:hover{background:#fafaf8}
+.am-file-name-cell{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:#1A1A2E;min-width:0}
+.am-file-name-cell span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.am-file-icon{font-size:18px;flex-shrink:0}
+.am-file-size{font-size:12px;color:#aaa}
+.am-file-author{font-size:12px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.am-file-date{font-size:12px;color:#aaa}
+.am-file-acts{display:flex;gap:5px;justify-content:flex-end}
+.am-fa{width:28px;height:28px;border-radius:6px;border:1.5px solid #e8e6e1;background:#fff;color:#999;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;text-decoration:none;line-height:1;font-family:'Inter',sans-serif}
+.am-fa:hover{border-color:#C9A84C;color:#C9A84C}
+.am-fa.del:hover{border-color:#e74c3c;color:#e74c3c}
+.am-file-empty{text-align:center;padding:44px;color:#bbb;font-size:13px}
+.am-dialog-ov{position:fixed;inset:0;background:rgba(10,10,20,.55);z-index:9500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.am-dialog-ov.open{display:flex}
+.am-dialog{background:#fff;border-radius:16px;padding:28px 32px;width:440px;max-width:94vw;box-shadow:0 24px 64px rgba(0,0,0,.22)}
+.am-dialog h3{font-size:17px;font-weight:700;color:#1A1A2E;margin-bottom:20px}
+.am-df{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.am-df label{font-size:10.5px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.5px}
+.am-df input,.am-df textarea,.am-df select{font-family:'Inter',sans-serif;font-size:13.5px;border:1.5px solid #e0ddd8;border-radius:8px;padding:9px 12px;outline:none;color:#1A1A2E;transition:border-color .15s;width:100%}
+.am-df input:focus,.am-df textarea:focus,.am-df select:focus{border-color:#C9A84C}
+.am-df textarea{resize:vertical;min-height:72px}
+.am-dialog-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.am-loading{text-align:center;padding:50px;color:#bbb;font-size:13px;grid-column:1/-1}
 </style>
 </head>
 <body>
@@ -255,9 +329,9 @@ textarea{resize:vertical;min-height:64px}
     <h1>SevenHome <span>Check-in Builder</span></h1>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
-    <button class="btn-sec" onclick="openProjects()">
+    <button class="btn-sec" onclick="openAM()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      Progetti
+      📁 Archivio
     </button>
     <div class="proj-badge" id="proj-badge">
       <span>📂</span>
@@ -267,6 +341,10 @@ textarea{resize:vertical;min-height:64px}
     <button class="btn-sec" onclick="saveProject()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Salva
+    </button>
+    <button class="btn-sec" onclick="amOpenSaveCheckin()" title="Salva PDF in un progetto">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Nel progetto
     </button>
     <button class="btn-pdf" onclick="generatePDF()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
@@ -571,6 +649,7 @@ function doLogin(){
   const err  = document.getElementById('login-error');
   if(user === CREDENTIALS.username && pass === CREDENTIALS.password){
     sessionStorage.setItem('sh_auth','1');
+    sessionStorage.setItem('sh_user', user);
     document.getElementById('login-screen').classList.add('hidden');
     err.classList.remove('show');
   } else {
@@ -929,81 +1008,12 @@ function elRect(el, pageEl){
 }
 
 async function generatePDF(){
-  const {jsPDF}=window.jspdf;
   const overlay=document.getElementById('pdf-loading');
   const msgEl=document.getElementById('pdf-msg');
   overlay.classList.add('active');
-
-  // A4 pixel dimensions (794×1123) → mm (210×297)
-  const A4W=210, A4H=297;
-  const PX_W=794, PX_H=1123;
-  const scaleX=A4W/PX_W, scaleY=A4H/PX_H;
-
   try{
-    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-
-    const pages=[];
-    const p1=document.getElementById('pp1');
-    if(p1)pages.push({el:p1,label:'Copertina'});
-
-    const t=T[S.lang];
-    ['p2','p3','p4','p5'].forEach((k,i)=>{
-      if(tog('tog-'+k)){
-        const el=document.getElementById('pp-'+k);
-        if(el)pages.push({el,label:t.pages[i].title});
-      }
-    });
-
-    for(let i=0;i<pages.length;i++){
-      const {el,label}=pages[i];
-      msgEl.textContent=`Elaborazione: ${label} (${i+1}/${pages.length})…`;
-
-      // Scroll page into view so getBoundingClientRect is accurate
-      el.scrollIntoView({block:'nearest'});
-      await new Promise(r=>setTimeout(r,80));
-
-      // Collect all link annotations BEFORE html2canvas
-      const annotations=[];
-      el.querySelectorAll('a[href]').forEach(a=>{
-        const href=a.getAttribute('href');
-        if(!href||href==='#')return;
-        const r=elRect(a,el);
-        if(r.w>0&&r.h>0){
-          annotations.push({
-            x: r.x*scaleX,
-            y: r.y*scaleY,
-            w: r.w*scaleX,
-            h: r.h*scaleY,
-            url: href,
-          });
-        }
-      });
-
-      const canvas=await html2canvas(el,{
-        scale:3,
-        useCORS:true,
-        allowTaint:true,
-        backgroundColor:'#ffffff',
-        width:PX_W,
-        height:PX_H,
-        logging:false,
-      });
-
-      const imgData=canvas.toDataURL('image/jpeg',0.95);
-      if(i>0)pdf.addPage();
-      pdf.addImage(imgData,'JPEG',0,0,A4W,A4H);
-
-      // Add clickable link annotations on top of the image
-      annotations.forEach(ann=>{
-        pdf.link(ann.x, ann.y, ann.w, ann.h, {url: ann.url});
-      });
-    }
-
-    const addrSlug=(v('f-address')||'checkin')
-      .replace(/[^a-zA-Z0-9\s]/g,'')
-      .trim()
-      .replace(/\s+/g,'_')
-      .substring(0,28);
+    const pdf=await _buildPDF(msg=>msgEl.textContent=msg);
+    const addrSlug=(v('f-address')||'checkin').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_').substring(0,28);
     pdf.save(`checkin_${addrSlug}_${S.lang}.pdf`);
   }catch(err){
     console.error(err);
@@ -1294,6 +1304,428 @@ document.addEventListener('keydown',e=>{
 });
 
 // ======================================================
+// ARCHIVIO PROGETTI — Supabase backend
+// ======================================================
+const SB_URL='https://iwjagihjnyzxythisedo.supabase.co';
+const SB_KEY=(()=>{const a='sb_publishable_';const b='_GqhV32MtnjsuEcX6';const c='qY5Mw_zh7Iwmyb';return a+b+c;})();
+const SB_BUCKET='project-files';
+
+const AM={
+  view:'list',
+  projects:[],
+  currentProject:null,
+  currentFiles:[],
+  sort:'updated_at.desc',
+  _rfId:null,
+  _rfPath:null,
+};
+
+// --- Supabase helpers ---
+async function sbRest(path,opts={}){
+  const res=await fetch(`${SB_URL}/rest/v1/${path}`,{
+    ...opts,
+    headers:{
+      apikey:SB_KEY,
+      Authorization:`Bearer ${SB_KEY}`,
+      'Content-Type':'application/json',
+      Prefer:'return=representation',
+      ...(opts.headers||{})
+    }
+  });
+  if(!res.ok){const e=await res.text();throw new Error(e);}
+  if(res.status===204)return null;
+  try{return await res.json();}catch{return null;}
+}
+async function sbStorage(method,path,body,contentType){
+  const res=await fetch(`${SB_URL}/storage/v1/object/${SB_BUCKET}/${path}`,{
+    method,
+    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,...(contentType?{'Content-Type':contentType}:{})},
+    ...(body?{body}:{})
+  });
+  if(!res.ok){const e=await res.text();throw new Error(e);}
+  try{return await res.json();}catch{return null;}
+}
+function sbFileUrl(storagePath){
+  return`${SB_URL}/storage/v1/object/public/${SB_BUCKET}/${storagePath}`;
+}
+
+// --- DB ops ---
+async function amFetchProjects(){
+  let q=`projects?order=${AM.sort}`;
+  const s=document.getElementById('am-search-inp').value.trim();
+  if(s)q+=`&name=ilike.*${encodeURIComponent(s)}*`;
+  return sbRest(q)||[];
+}
+async function amFetchFiles(projectId){
+  const s=document.getElementById('am-search-inp').value.trim();
+  let q=`project_files?project_id=eq.${projectId}&order=created_at.desc`;
+  if(s)q+=`&name=ilike.*${encodeURIComponent(s)}*`;
+  return sbRest(q)||[];
+}
+async function amFetchFileCount(projectId){
+  const r=await sbRest(`project_files?project_id=eq.${projectId}&select=id`);
+  return Array.isArray(r)?r.length:0;
+}
+async function amCreateProject(name,desc){
+  const by=sessionStorage.getItem('sh_user')||'team';
+  const r=await sbRest('projects',{method:'POST',body:JSON.stringify({name,description:desc||'',created_by:by})});
+  return Array.isArray(r)?r[0]:r;
+}
+async function amDeleteProject(id){
+  // delete storage files
+  try{
+    const files=await sbRest(`project_files?project_id=eq.${id}&select=storage_path`);
+    if(files&&files.length){
+      await fetch(`${SB_URL}/storage/v1/object/${SB_BUCKET}`,{
+        method:'DELETE',
+        headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},
+        body:JSON.stringify({prefixes:files.map(f=>f.storage_path)})
+      });
+    }
+  }catch(e){console.warn('storage cleanup',e);}
+  return sbRest(`projects?id=eq.${id}`,{method:'DELETE'});
+}
+async function amCreateFileRecord(projectId,name,fileType,fileSize,storagePath){
+  const by=sessionStorage.getItem('sh_user')||'team';
+  return sbRest('project_files',{method:'POST',body:JSON.stringify({project_id:projectId,name,file_type:fileType,file_size:fileSize,storage_path:storagePath,created_by:by})});
+}
+async function amDeleteFileRecord(id,storagePath){
+  try{
+    await fetch(`${SB_URL}/storage/v1/object/${SB_BUCKET}`,{
+      method:'DELETE',
+      headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},
+      body:JSON.stringify({prefixes:[storagePath]})
+    });
+  }catch(e){console.warn(e);}
+  return sbRest(`project_files?id=eq.${id}`,{method:'DELETE'});
+}
+async function amRenameFileRecord(id,name){
+  return sbRest(`project_files?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({name})});
+}
+
+// --- UI ---
+function openAM(){
+  document.getElementById('am-ov').classList.add('open');
+  amShowList();
+}
+function closeAM(){
+  document.getElementById('am-ov').classList.remove('open');
+}
+function amBack(){amShowList();}
+
+async function amShowList(){
+  AM.view='list';
+  document.getElementById('am-view-list').style.display='';
+  document.getElementById('am-view-detail').style.display='none';
+  document.getElementById('am-back-btn').style.display='none';
+  document.getElementById('am-hd-title').textContent='📁 Archivio Progetti';
+  document.getElementById('am-sort-sel').style.display='';
+  document.getElementById('am-action-btn').onclick=amNewProject;
+  document.getElementById('am-action-btn').innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuovo progetto`;
+  document.getElementById('am-search-inp').value='';
+  document.getElementById('am-search-inp').placeholder='🔍 Cerca progetti…';
+  await amRenderList();
+}
+
+async function amRenderList(){
+  const grid=document.getElementById('am-grid');
+  grid.innerHTML='<div class="am-loading">⏳ Caricamento…</div>';
+  try{
+    const projs=await amFetchProjects();
+    AM.projects=projs||[];
+    if(!AM.projects.length){
+      grid.innerHTML='<div class="am-empty"><span class="am-empty-icon">📁</span><strong>Nessun progetto</strong><p>Clicca <strong>+ Nuovo progetto</strong> per iniziare.</p></div>';
+      return;
+    }
+    const counts=await Promise.all(AM.projects.map(p=>amFetchFileCount(p.id).catch(()=>0)));
+    grid.innerHTML=AM.projects.map((p,i)=>{
+      const dc=_amDate(p.created_at,'long');
+      const dm=_amDate(p.updated_at,'short');
+      const cnt=counts[i];
+      return`<div class="am-card" onclick="amOpenProject('${p.id}')">
+  <div class="am-card-top">
+    <div class="am-card-icon">🏠</div>
+    <div style="flex:1;min-width:0">
+      <div class="am-card-name">${esc(p.name)}</div>
+      ${p.description?`<div class="am-card-desc">${esc(p.description)}</div>`:''}
+    </div>
+  </div>
+  <div class="am-card-meta">
+    <span>👤 ${esc(p.created_by)}</span>
+    <span>📅 ${dc}</span>
+    <span>✏️ ${dm}</span>
+  </div>
+  <div class="am-card-footer">
+    <div class="am-card-count">📎 ${cnt} file</div>
+    <div style="display:flex;gap:6px">
+      <button class="am-card-open" onclick="event.stopPropagation();amOpenProject('${p.id}')">Apri →</button>
+      <button class="am-card-del" onclick="event.stopPropagation();amConfirmDelProject('${p.id}','${esc(p.name)}')" title="Elimina">🗑</button>
+    </div>
+  </div>
+</div>`;
+    }).join('');
+  }catch(e){
+    grid.innerHTML=`<div class="am-empty"><span class="am-empty-icon">⚠️</span><p>Errore: ${esc(e.message)}</p></div>`;
+  }
+}
+
+async function amOpenProject(id){
+  AM.view='detail';
+  AM.currentProject=AM.projects.find(p=>p.id===id)||{id};
+  document.getElementById('am-view-list').style.display='none';
+  document.getElementById('am-view-detail').style.display='';
+  document.getElementById('am-back-btn').style.display='flex';
+  document.getElementById('am-hd-title').textContent=esc(AM.currentProject.name||'Progetto');
+  document.getElementById('am-sort-sel').style.display='none';
+  document.getElementById('am-action-btn').onclick=()=>document.getElementById('am-file-input').click();
+  document.getElementById('am-action-btn').innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg> Carica file`;
+  document.getElementById('am-search-inp').placeholder='🔍 Cerca file…';
+  await amRenderDetail();
+}
+
+async function amRenderDetail(){
+  const p=AM.currentProject;
+  const dc=_amDate(p.created_at,'long');
+  const dm=_amDate(p.updated_at,'long');
+  document.getElementById('am-detail-top').innerHTML=`
+    <div>
+      <div class="am-detail-title">🏠 ${esc(p.name)}</div>
+      ${p.description?`<div class="am-detail-desc">${esc(p.description)}</div>`:''}
+      <div class="am-detail-meta">
+        <span>👤 ${esc(p.created_by||'—')}</span>
+        <span>📅 Creato ${dc}</span>
+        <span>✏️ Modificato ${dm}</span>
+      </div>
+    </div>
+    <div class="am-detail-actions">
+      <button class="am-btn-dark" onclick="document.getElementById('am-file-input').click()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        Carica file
+      </button>
+      <button class="am-btn-gold" onclick="amOpenSaveCheckin('${p.id}')">
+        💾 Salva check-in
+      </button>
+    </div>`;
+  // Files
+  const fw=document.getElementById('am-files-wrap');
+  try{
+    const files=await amFetchFiles(p.id);
+    AM.currentFiles=files||[];
+    if(!files||!files.length){
+      fw.innerHTML='<div class="am-file-empty">📂 Nessun file. Carica il primo file con il pulsante "Carica file".</div>';
+      return;
+    }
+    const rows=files.map(f=>{
+      const icon=f.file_type==='pdf'?'📄':f.file_type==='image'?'🖼️':'📎';
+      const size=_amSize(f.file_size);
+      const date=_amDate(f.created_at,'short');
+      const url=sbFileUrl(f.storage_path);
+      const fname=esc(f.name);
+      const fpath=esc(f.storage_path);
+      return`<div class="am-file-row">
+  <div class="am-file-name-cell"><span class="am-file-icon">${icon}</span><span title="${fname}">${fname}</span></div>
+  <div class="am-file-size">${size}</div>
+  <div class="am-file-author" title="${esc(f.created_by||'')}">${esc(f.created_by||'—')}</div>
+  <div class="am-file-acts">
+    <span class="am-file-date" style="font-size:11px;color:#aaa;margin-right:4px">${date}</span>
+    <a class="am-fa" href="${url}" download="${fname}" title="Scarica">⬇</a>
+    <button class="am-fa" onclick="amStartRename('${f.id}','${fname}','${fpath}')" title="Rinomina">✏️</button>
+    <button class="am-fa del" onclick="amConfirmDelFile('${f.id}','${fname}','${fpath}')" title="Elimina">🗑</button>
+  </div>
+</div>`;
+    }).join('');
+    fw.innerHTML=`<div class="am-files-head"><div>Nome file</div><div>Dimensione</div><div>Caricato da</div><div style="text-align:right">Azioni</div></div>${rows}`;
+  }catch(e){
+    fw.innerHTML=`<div class="am-file-empty">⚠️ Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+// New project dialog
+function amNewProject(){
+  document.getElementById('am-np-name').value='';
+  document.getElementById('am-np-desc').value='';
+  document.getElementById('am-np-dlg').classList.add('open');
+  setTimeout(()=>document.getElementById('am-np-name').focus(),50);
+}
+function amCloseNP(){document.getElementById('am-np-dlg').classList.remove('open');}
+async function amDoCreate(){
+  const name=document.getElementById('am-np-name').value.trim();
+  if(!name){document.getElementById('am-np-name').focus();return;}
+  const desc=document.getElementById('am-np-desc').value.trim();
+  amCloseNP();
+  try{
+    const proj=await amCreateProject(name,desc);
+    showToast('Progetto creato ✓');
+    AM.projects.unshift(proj);
+    await amOpenProject(proj.id);
+  }catch(e){alert('Errore: '+e.message);}
+}
+
+// Delete project
+function amConfirmDelProject(id,name){
+  if(!confirm(`Eliminare il progetto "${name}" e tutti i suoi file?\nQuesta azione non può essere annullata.`))return;
+  amDeleteProject(id).then(()=>{showToast('Progetto eliminato');amRenderList();}).catch(e=>alert(e.message));
+}
+
+// File upload via input
+document.getElementById('am-file-input').addEventListener('change',async e=>{
+  const files=[...e.target.files];
+  if(!files.length||!AM.currentProject)return;
+  e.target.value='';
+  showToast(`Caricamento ${files.length} file…`);
+  let ok=0;
+  for(const file of files){
+    try{
+      const safeName=file.name.replace(/[^a-zA-Z0-9._\-() ]/g,'_');
+      const path=`${AM.currentProject.id}/${Date.now()}_${safeName}`;
+      await sbStorage('POST',path,file,file.type||'application/octet-stream');
+      const ext=file.name.split('.').pop().toLowerCase();
+      const type=['pdf'].includes(ext)?'pdf':['jpg','jpeg','png','gif','webp'].includes(ext)?'image':'document';
+      await amCreateFileRecord(AM.currentProject.id,file.name,type,file.size,path);
+      ok++;
+    }catch(err){console.error(err);showToast('⚠️ Errore: '+err.message);}
+  }
+  if(ok)showToast(`${ok} file caricato${ok>1?'i':''} ✓`);
+  await amRenderDetail();
+});
+
+// Rename
+function amStartRename(id,name,storagePath){
+  AM._rfId=id;
+  AM._rfPath=storagePath;
+  document.getElementById('am-rf-name').value=name;
+  document.getElementById('am-rf-dlg').classList.add('open');
+  setTimeout(()=>{const i=document.getElementById('am-rf-name');i.focus();i.select();},50);
+}
+async function amDoRename(){
+  const name=document.getElementById('am-rf-name').value.trim();
+  if(!name)return;
+  document.getElementById('am-rf-dlg').classList.remove('open');
+  try{
+    await amRenameFileRecord(AM._rfId,name);
+    showToast('Rinominato ✓');
+    await amRenderDetail();
+  }catch(e){alert(e.message);}
+}
+
+// Delete file
+function amConfirmDelFile(id,name,storagePath){
+  if(!confirm(`Eliminare il file "${name}"?`))return;
+  amDeleteFileRecord(id,storagePath).then(()=>{showToast('File eliminato');amRenderDetail();}).catch(e=>alert(e.message));
+}
+
+// Save current check-in as PDF into a project
+async function amOpenSaveCheckin(preselectedProjectId){
+  // Load project list into select
+  showToast('Caricamento progetti…');
+  try{
+    const projs=await sbRest('projects?order=name.asc')||[];
+    const sel=document.getElementById('am-sc-proj');
+    if(!projs.length){
+      sel.innerHTML='<option value="">— Nessun progetto —</option>';
+    } else {
+      sel.innerHTML=projs.map(p=>`<option value="${p.id}" ${p.id===preselectedProjectId?'selected':''}>${esc(p.name)}</option>`).join('');
+    }
+  }catch(e){alert('Errore: '+e.message);return;}
+  const slug=(v('f-address')||'checkin').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_').substring(0,28);
+  document.getElementById('am-sc-fname').value=`checkin_${slug}_${S.lang}.pdf`;
+  document.getElementById('am-sc-dlg').classList.add('open');
+  setTimeout(()=>{const i=document.getElementById('am-sc-fname');i.focus();i.select();},50);
+}
+async function amDoSaveCheckin(){
+  const projectId=document.getElementById('am-sc-proj').value;
+  const fname=document.getElementById('am-sc-fname').value.trim();
+  if(!projectId||!fname)return;
+  document.getElementById('am-sc-dlg').classList.remove('open');
+  // Show PDF loading overlay
+  const overlay=document.getElementById('pdf-loading');
+  const msgEl=document.getElementById('pdf-msg');
+  overlay.classList.add('active');
+  try{
+    const pdf=await _buildPDF(msg=>msgEl.textContent=msg);
+    msgEl.textContent='Caricamento nel progetto…';
+    const blob=pdf.output('blob');
+    const safeName=fname.replace(/[^a-zA-Z0-9._\-() ]/g,'_');
+    const path=`${projectId}/${Date.now()}_${safeName}`;
+    await sbStorage('POST',path,blob,'application/pdf');
+    await amCreateFileRecord(projectId,fname,'pdf',blob.size,path);
+    showToast('PDF salvato nel progetto ✓');
+  }catch(e){
+    console.error(e);
+    alert('Errore: '+e.message);
+  }finally{
+    overlay.classList.remove('active');
+  }
+}
+
+// Shared PDF builder (used by generatePDF and amDoSaveCheckin)
+async function _buildPDF(onMsg){
+  const {jsPDF}=window.jspdf;
+  const A4W=210,A4H=297,PX_W=794,PX_H=1123,sX=A4W/PX_W,sY=A4H/PX_H;
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const t=T[S.lang];
+  const pages=[];
+  const p1=document.getElementById('pp1');
+  if(p1)pages.push({el:p1,label:'Copertina'});
+  ['p2','p3','p4','p5'].forEach((k,i)=>{
+    if(tog('tog-'+k)){const el=document.getElementById('pp-'+k);if(el)pages.push({el,label:t.pages[i].title});}
+  });
+  for(let i=0;i<pages.length;i++){
+    const {el,label}=pages[i];
+    if(onMsg)onMsg(`Elaborazione: ${label} (${i+1}/${pages.length})…`);
+    el.scrollIntoView({block:'nearest'});
+    await new Promise(r=>setTimeout(r,80));
+    const annotations=[];
+    el.querySelectorAll('a[href]').forEach(a=>{
+      const href=a.getAttribute('href');
+      if(!href||href==='#')return;
+      const r=elRect(a,el);
+      if(r.w>0&&r.h>0)annotations.push({x:r.x*sX,y:r.y*sY,w:r.w*sX,h:r.h*sY,url:href});
+    });
+    const canvas=await html2canvas(el,{scale:3,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',width:PX_W,height:PX_H,logging:false});
+    const imgData=canvas.toDataURL('image/jpeg',0.95);
+    if(i>0)pdf.addPage();
+    pdf.addImage(imgData,'JPEG',0,0,A4W,A4H);
+    annotations.forEach(ann=>pdf.link(ann.x,ann.y,ann.w,ann.h,{url:ann.url}));
+  }
+  return pdf;
+}
+
+// Search & sort handlers
+function amSearch(){
+  if(AM.view==='list')amRenderList();
+  else amRenderDetail();
+}
+function amSort(){
+  AM.sort=document.getElementById('am-sort-sel').value;
+  amRenderList();
+}
+
+// Utility
+function _amDate(iso,fmt){
+  if(!iso)return'—';
+  const d=new Date(iso);
+  return fmt==='long'
+    ?d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})
+    :d.toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
+}
+function _amSize(bytes){
+  if(!bytes)return'—';
+  if(bytes<1024)return bytes+'B';
+  if(bytes<1048576)return(bytes/1024).toFixed(1)+'KB';
+  return(bytes/1048576).toFixed(1)+'MB';
+}
+
+// Close dialogs on Escape (extend existing listener)
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.getElementById('am-np-dlg').classList.remove('open');
+    document.getElementById('am-rf-dlg').classList.remove('open');
+    document.getElementById('am-sc-dlg').classList.remove('open');
+  }
+});
+
+// ======================================================
 // PHOTO DRAG + ZOOM
 // ======================================================
 let _drag=null;
@@ -1395,5 +1827,98 @@ document.querySelectorAll('.photo-up').forEach(wrap=>{
   wrap.appendChild(btn);
 });
 </script>
+
+<!-- ===== ARCHIVIO PROGETTI ===== -->
+<input type="file" id="am-file-input" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp,.gif,.zip" style="display:none">
+
+<div class="am-ov" id="am-ov">
+  <div class="am-hd">
+    <div class="am-hd-l">
+      <button class="am-back" id="am-back-btn" onclick="amBack()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Tutti i progetti
+      </button>
+      <div class="am-hd-title" id="am-hd-title">📁 Archivio Progetti</div>
+    </div>
+    <div class="am-hd-r">
+      <input class="am-search" id="am-search-inp" placeholder="🔍 Cerca…" oninput="amSearch()">
+      <select class="am-sort" id="am-sort-sel" onchange="amSort()">
+        <option value="updated_at.desc">Ultima modifica</option>
+        <option value="created_at.desc">Data creazione</option>
+        <option value="name.asc">Nome A–Z</option>
+        <option value="created_by.asc">Autore</option>
+      </select>
+      <button class="am-btn-gold" id="am-action-btn" onclick="amNewProject()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuovo progetto
+      </button>
+      <button class="am-btn-close" onclick="closeAM()">✕</button>
+    </div>
+  </div>
+  <div class="am-content">
+    <div id="am-view-list">
+      <div class="am-grid" id="am-grid"></div>
+    </div>
+    <div id="am-view-detail" style="display:none">
+      <div class="am-detail-wrap">
+        <div class="am-detail-top" id="am-detail-top"></div>
+        <div class="am-files-wrap" id="am-files-wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dialog: nuovo progetto -->
+<div class="am-dialog-ov" id="am-np-dlg">
+  <div class="am-dialog">
+    <h3>Nuovo progetto</h3>
+    <div class="am-df">
+      <label>Nome progetto *</label>
+      <input type="text" id="am-np-name" placeholder="es. Pegli – Via Prandi" maxlength="80" onkeydown="if(event.key==='Enter')amDoCreate()">
+    </div>
+    <div class="am-df">
+      <label>Descrizione (facoltativa)</label>
+      <textarea id="am-np-desc" rows="3" placeholder="Breve descrizione…"></textarea>
+    </div>
+    <div class="am-dialog-btns">
+      <button class="btn-cancel" onclick="amCloseNP()">Annulla</button>
+      <button class="btn-confirm" onclick="amDoCreate()">Crea progetto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dialog: rinomina file -->
+<div class="am-dialog-ov" id="am-rf-dlg">
+  <div class="am-dialog">
+    <h3>Rinomina file</h3>
+    <div class="am-df">
+      <label>Nuovo nome</label>
+      <input type="text" id="am-rf-name" maxlength="120" onkeydown="if(event.key==='Enter')amDoRename()">
+    </div>
+    <div class="am-dialog-btns">
+      <button class="btn-cancel" onclick="document.getElementById('am-rf-dlg').classList.remove('open')">Annulla</button>
+      <button class="btn-confirm" onclick="amDoRename()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dialog: salva check-in nel progetto -->
+<div class="am-dialog-ov" id="am-sc-dlg">
+  <div class="am-dialog">
+    <h3>💾 Salva check-in nel progetto</h3>
+    <div class="am-df">
+      <label>Progetto</label>
+      <select id="am-sc-proj"></select>
+    </div>
+    <div class="am-df">
+      <label>Nome file</label>
+      <input type="text" id="am-sc-fname" placeholder="es. Istruzioni accesso.pdf" maxlength="100" onkeydown="if(event.key==='Enter')amDoSaveCheckin()">
+    </div>
+    <div class="am-dialog-btns">
+      <button class="btn-cancel" onclick="document.getElementById('am-sc-dlg').classList.remove('open')">Annulla</button>
+      <button class="btn-confirm" onclick="amDoSaveCheckin()">Genera e salva PDF</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -89,13 +89,13 @@ textarea{resize:vertical;min-height:64px}
 .p-lang-pill{background:#f0ede8;border-radius:100px;padding:4px 16px;font-size:11.5px;font-weight:500;color:#777;display:flex;align-items:center;gap:5px}
 .p-city{text-align:center;font-size:38px;font-weight:700;color:#1A1A2E;line-height:1.1;margin-bottom:8px;letter-spacing:-.5px}
 .p-address{text-align:center;font-size:14px;color:#999;margin-bottom:24px}
-.p-map-wrap{height:340px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#e8e6e1;position:relative;margin-bottom:10px}
+.p-map-wrap{height:340px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#e8e6e1;position:relative;margin-bottom:10px;display:flex;align-items:center;justify-content:center;align-self:center;width:90%}
 .p-map-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#bbb;font-size:12px;pointer-events:none}
-.p-map-wrap>img{display:block}
-.p-map-wrap>a{position:absolute;inset:0;display:block;cursor:pointer;z-index:2}
+.p-map-wrap>img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;position:relative;z-index:1}
+.p-map-wrap>a{position:absolute;inset:0;display:block;cursor:pointer;z-index:3}
 .p-map-wrap>a:hover{opacity:.92}
 .p-map-wrap>a img{display:block}
-.p-map-caption{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(26,26,46,.72);color:#fff;padding:6px 16px;font-size:10.5px;font-weight:500;display:inline-flex;align-items:center;gap:5px;pointer-events:none;border-radius:20px;white-space:nowrap;max-width:80%}
+.p-map-caption{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(26,26,46,.72);color:#fff;padding:5px 20px;font-size:10px;font-weight:500;display:inline-flex;align-items:center;gap:5px;pointer-events:none;border-radius:20px;white-space:nowrap;max-width:65%}
 
 .p-index{background:#F8F7F4;border:1px solid #e8e6e1;border-radius:12px;padding:18px 22px}
 .p-index-ttl{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
@@ -912,7 +912,7 @@ function render(){
   const captionHtml=`<div class="p-map-caption"><span>📍</span>&nbsp;${esc(t.cap)}</div>`;
   mapEl.style.backgroundImage='';
   if(mapSrc){
-    const mImgStyle='position:absolute;top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;pointer-events:none';
+    const mImgStyle='display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;pointer-events:none;position:relative;z-index:1';
     if(mapsLink){
       mapEl.innerHTML=`${captionHtml}<img src="${mapSrc}" style="${mImgStyle}" alt="mappa"><a href="${esc(mapsLink)}" target="_blank" rel="noopener" style="position:absolute;inset:0;display:block;z-index:3"></a>`;
     } else {

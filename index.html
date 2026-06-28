@@ -948,25 +948,11 @@ function toggleSec(hd){
 // ======================================================
 // IMAGE UPLOAD
 // ======================================================
-function compressImage(dataUrl, maxPx, quality){
-  return new Promise(resolve=>{
-    const img=new Image();
-    img.onload=()=>{
-      let w=img.width,h=img.height;
-      if(w>maxPx||h>maxPx){const r=Math.min(maxPx/w,maxPx/h);w=Math.round(w*r);h=Math.round(h*r);}
-      const c=document.createElement('canvas');c.width=w;c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(c.toDataURL('image/jpeg',quality));
-    };
-    img.src=dataUrl;
-  });
-}
-
 function handleLogo(ev){
   const f=ev.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=async e=>{
-    S.logo=await compressImage(e.target.result,800,0.8);
+  r.onload=e=>{
+    S.logo=e.target.result;
     const prev=document.getElementById('logo-prev');
     prev.src=S.logo;
     ev.target.closest('.photo-up').classList.add('has-img');
@@ -978,8 +964,8 @@ function handleLogo(ev){
 function handlePhoto(ev,key){
   const f=ev.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=async e=>{
-    S.photos[key]=await compressImage(e.target.result,1200,0.75);
+  r.onload=e=>{
+    S.photos[key]=e.target.result;
     const prev=document.getElementById(key+'-prev');
     if(prev){prev.src=S.photos[key];ev.target.closest('.photo-up').classList.add('has-img');}
     render();

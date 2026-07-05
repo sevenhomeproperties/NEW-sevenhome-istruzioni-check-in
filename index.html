@@ -403,6 +403,10 @@ textarea{resize:vertical;min-height:64px}
     <h1>SevenHome <span>Check-in Builder</span></h1>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
+    <button class="btn-sec" onclick="newProject()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nuovo
+    </button>
     <button class="btn-sec" onclick="openAM()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
       📁 Archivio
@@ -1415,6 +1419,25 @@ function clearCurrentProject(){
   S.currentProjectId = null;
   S.currentProjectName = null;
   updateProjectBadge();
+}
+
+function newProject(){
+  if(!confirm('Iniziare un nuovo progetto?\nIl lavoro corrente verrà rimosso dal builder (se salvato, resta in archivio).'))return;
+  FIELD_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  TOGGLE_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=true; });
+  S.logo=null;
+  S.photos={};
+  S.photoState={};
+  S.photoUrls={};
+  S._pendingUploads={};
+  S.p6links=[];
+  renderP6LinksForm();
+  _syncPhotoUploadUI();
+  clearCurrentProject();
+  try{localStorage.removeItem(DRAFT_KEY);}catch(e){}
+  autosaveSetStatus('local');
+  render();
+  showToast('Nuovo progetto — builder svuotato ✓');
 }
 
 function saveProject(){

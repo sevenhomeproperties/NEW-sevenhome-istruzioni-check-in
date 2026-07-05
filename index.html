@@ -261,6 +261,30 @@ textarea{resize:vertical;min-height:64px}
 .am-card-open:hover{background:#2a2a42}
 .am-card-del{width:30px;height:30px;border-radius:8px;border:1.5px solid #e8e6e1;background:#fff;color:#ccc;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .am-card-del:hover{border-color:#e74c3c;color:#e74c3c}
+/* --- Archivio: card v2 --- */
+.am-card2{padding:0;gap:0;overflow:hidden}
+.am-card2.dragging{opacity:.35}
+.am-card2.drop-target{border-color:#C9A84C;box-shadow:0 0 0 3px rgba(201,168,76,.30)}
+.am-drag-handle{position:absolute;top:10px;left:10px;z-index:2;background:rgba(255,255,255,.92);border:1px solid #e8e6e1;border-radius:7px;padding:2px 7px;font-size:14px;color:#999;cursor:grab;line-height:1.4}
+.am-card-thumb{height:150px;background-color:#EFEBE3;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:42px;flex-shrink:0}
+.am-card-body{padding:14px 16px 10px;display:flex;flex-direction:column;gap:8px;flex:1}
+.am-card-name2{font-size:16px;font-weight:800;color:#1A1A2E;line-height:1.25;letter-spacing:-.01em}
+.am-card-badges{display:flex;gap:6px;flex-wrap:wrap}
+.am-lang-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.45);color:#8a6d1f;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:100px}
+.am-lang-badge.muted{background:#f5f3ef;border-color:#e8e6e1;color:#bbb;font-weight:500}
+.am-card-dates{display:flex;gap:14px;font-size:11px;color:#aaa;margin-top:2px}
+.am-card-acts{display:flex;gap:6px;padding:10px 16px 14px;border-top:1px solid #f0ede8}
+.am-act{padding:8px 12px;background:#fff;color:#1A1A2E;border:1.5px solid #e8e6e1;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+.am-act:hover{border-color:#C9A84C}
+.am-act.primary{flex:1;background:#1A1A2E;color:#C9A84C;border-color:#1A1A2E}
+.am-act.primary:hover{background:#2a2a42}
+.am-act.del{color:#c0392b}
+.am-act.del:hover{border-color:#e74c3c}
+/* skeleton */
+.am-sk{pointer-events:none;padding:0;overflow:hidden}
+.am-sk-thumb{height:150px;background:linear-gradient(90deg,#ece9e3 25%,#f7f5f1 50%,#ece9e3 75%);background-size:200% 100%;animation:amsk 1.2s infinite;margin-bottom:14px}
+.am-sk-bar{height:13px;border-radius:7px;margin:0 16px 10px;background:linear-gradient(90deg,#ece9e3 25%,#f7f5f1 50%,#ece9e3 75%);background-size:200% 100%;animation:amsk 1.2s infinite}
+@keyframes amsk{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .am-detail-wrap{display:flex;flex-direction:column;gap:16px}
 .am-detail-top{background:#fff;border:1.5px solid #e8e6e1;border-radius:12px;padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .am-detail-title{font-size:20px;font-weight:700;color:#1A1A2E;letter-spacing:-.2px}
@@ -947,32 +971,76 @@ function toggleSec(hd){
 
 // ======================================================
 // IMAGE UPLOAD
+// In sessione le foto restano a piena risoluzione (S.photos = dataURL);
+// su Storage va in parallelo una copia 1200px/JPEG 0.8 usata da salvataggi
+// e archivio. Nel DB finiscono SOLO gli URL, mai base64.
 // ======================================================
-async function uploadPhotoToStorage(dataUrl, key){
-  try{
-    const res=await fetch(dataUrl);
-    const blob=await res.blob();
-    const path=`photos/${Date.now()}-${key}.jpg`;
-    await sbStorage('POST',path,blob,blob.type||'image/jpeg');
-    return sbFileUrl(path);
-  }catch(e){
-    console.warn('Storage upload failed, keeping local data:',e);
-    return null;
-  }
+S.photoUrls={};        // key -> {src, url}: cache degli upload completati
+S._pendingUploads={};  // key -> Promise dell'upload in corso
+
+function compressForStorage(dataUrl){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      const MAX=1200;
+      if(w>MAX||h>MAX){const r=Math.min(MAX/w,MAX/h);w=Math.round(w*r);h=Math.round(h*r);}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/jpeg',0.8));
+    };
+    img.onerror=()=>reject(new Error('Immagine non leggibile'));
+    img.src=dataUrl;
+  });
+}
+
+async function _uploadCompressed(dataUrl,key){
+  const small=await compressForStorage(dataUrl);
+  const blob=await (await fetch(small)).blob();
+  const path=`photos/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${key}.jpg`;
+  await sbStorage('POST',path,blob,'image/jpeg');
+  return sbFileUrl(path);
+}
+
+function queuePhotoUpload(key,dataUrl){
+  const pr=_uploadCompressed(dataUrl,key)
+    .then(url=>{
+      S.photoUrls[key]={src:dataUrl,url};
+      delete S._pendingUploads[key];
+      scheduleAutosave();
+      return url;
+    })
+    .catch(err=>{
+      delete S._pendingUploads[key];
+      console.error('Upload foto fallito:',key,err);
+      showToast('⚠️ Upload immagine non riuscito — verrà ritentato al salvataggio');
+      autosaveSetStatus('error');
+      throw err;
+    });
+  S._pendingUploads[key]=pr;
+  pr.catch(()=>{});
+  return pr;
+}
+
+// Risolve il valore da salvare nel DB: sempre un URL Storage, mai base64.
+async function resolvePhotoUrl(key,val){
+  if(!val||!val.startsWith('data:'))return val;
+  const c=S.photoUrls[key];
+  if(c&&c.src===val)return c.url;
+  if(S._pendingUploads[key])return await S._pendingUploads[key];
+  return await queuePhotoUpload(key,val);
 }
 
 function handleLogo(ev){
   const f=ev.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=async e=>{
-    const dataUrl=e.target.result;
-    S.logo=dataUrl;
+  r.onload=e=>{
+    S.logo=e.target.result;
     const prev=document.getElementById('logo-prev');
-    prev.src=dataUrl;
+    prev.src=S.logo;
     ev.target.closest('.photo-up').classList.add('has-img');
     render();
-    const url=await uploadPhotoToStorage(dataUrl,'logo');
-    if(url) S.logo=url;
+    queuePhotoUpload('__logo__',S.logo);
   };
   r.readAsDataURL(f);
 }
@@ -980,14 +1048,12 @@ function handleLogo(ev){
 function handlePhoto(ev,key){
   const f=ev.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=async e=>{
-    const dataUrl=e.target.result;
-    S.photos[key]=dataUrl;
+  r.onload=e=>{
+    S.photos[key]=e.target.result;
     const prev=document.getElementById(key+'-prev');
-    if(prev){prev.src=dataUrl;ev.target.closest('.photo-up').classList.add('has-img');}
+    if(prev){prev.src=S.photos[key];ev.target.closest('.photo-up').classList.add('has-img');}
     render();
-    const url=await uploadPhotoToStorage(dataUrl,key);
-    if(url) S.photos[key]=url;
+    queuePhotoUpload(key,S.photos[key]);
   };
   r.readAsDataURL(f);
 }
@@ -1374,17 +1440,36 @@ function closeSaveDialog(){
   document.getElementById('save-dialog').classList.remove('open');
 }
 
-async function confirmSave(update){
-  const name = document.getElementById('save-name-input').value.trim() || 'Progetto senza nome';
+// Costruisce lo stato da salvare nel DB: tutte le immagini vengono risolte
+// in URL Storage. Se anche una sola non è caricabile → errore esplicito,
+// mai salvataggi parziali silenziosi.
+async function buildStateForSave(){
   const fields = {};
   FIELD_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) fields[id]=el.value; });
   const toggles = {};
   TOGGLE_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) toggles[id]=el.checked; });
-  const state = {lang:S.lang, logo:S.logo, photos:{...S.photos}, photoState:{...S.photoState}, fields, toggles, p6links:[...(S.p6links||[])]};
+  const photos = {};
+  const failed = [];
+  for(const k of Object.keys(S.photos)){
+    if(!S.photos[k]) continue;
+    try{ photos[k]=await resolvePhotoUrl(k,S.photos[k]); }
+    catch(e){ failed.push(k); }
+  }
+  let logo = S.logo;
+  if(logo){
+    try{ logo=await resolvePhotoUrl('__logo__',logo); }
+    catch(e){ failed.push('logo'); }
+  }
+  if(failed.length) throw new Error('Immagini non caricate su Storage ('+failed.length+'): controlla la connessione e riprova. Nessun dato è stato salvato.');
+  return {lang:S.lang, logo, photos, photoState:{...S.photoState}, fields, toggles, p6links:[...(S.p6links||[])]};
+}
 
+async function confirmSave(update){
+  const name = document.getElementById('save-name-input').value.trim() || 'Progetto senza nome';
   closeSaveDialog();
   showToast('Salvataggio in corso…');
   try{
+    const state = await buildStateForSave();
     if(update && S.currentProjectId){
       await sbRest(`projects?id=eq.${S.currentProjectId}`,{method:'PATCH',body:JSON.stringify({name,state})});
       S.currentProjectName = name;
@@ -1399,7 +1484,9 @@ async function confirmSave(update){
       updateProjectBadge();
       showToast('Progetto salvato ✓');
     }
-  }catch(e){ alert('Errore salvataggio: '+e.message); }
+    _writeDraftLocal();
+    autosaveSetStatus('saved');
+  }catch(e){ alert('Errore salvataggio: '+e.message); autosaveSetStatus('error'); }
 }
 
 async function loadProject(id){
@@ -1452,6 +1539,8 @@ async function loadProject(id){
 
   closeProjects();
   render();
+  _writeDraftLocal();
+  autosaveSetStatus('saved');
   showToast('Progetto caricato ✓');
 }
 
@@ -1490,6 +1579,131 @@ document.addEventListener('keydown',e=>{
 });
 
 // ======================================================
+// AUTOSAVE — buffer localStorage immediato + sync Supabase (debounce 1.5s)
+// ======================================================
+const AS={timer:null,status:'saved',dirty:false,saving:false};
+const DRAFT_KEY='sh_draft_v1';
+
+function autosaveSetStatus(st){
+  AS.status=st;
+  const el=document.getElementById('as-chip');
+  if(!el)return;
+  const map={
+    saving:['Salvataggio…','#C9A84C'],
+    saved:['Salvato ✓','#8fce8f'],
+    local:['Bozza salvata ✓','#8fce8f'],
+    error:['⚠️ Errore di sincronizzazione — clicca per riprovare','#e77'],
+  };
+  const[m,c]=map[st]||map.saved;
+  el.textContent=m;
+  el.style.color=c;
+  el.style.cursor=st==='error'?'pointer':'default';
+}
+
+// Snapshot leggero per localStorage: foto solo come URL Storage
+// (i dataURL supererebbero i limiti di localStorage).
+function _draftSnapshot(){
+  const fields={};FIELD_IDS.forEach(id=>{const el=document.getElementById(id);if(el)fields[id]=el.value;});
+  const toggles={};TOGGLE_IDS.forEach(id=>{const el=document.getElementById(id);if(el)toggles[id]=el.checked;});
+  const photos={};
+  Object.entries(S.photos).forEach(([k,v])=>{
+    if(!v)return;
+    if(!v.startsWith('data:')){photos[k]=v;return;}
+    const c=S.photoUrls[k];
+    if(c&&c.src===v)photos[k]=c.url;
+  });
+  let logo=null;
+  if(S.logo){
+    if(!S.logo.startsWith('data:'))logo=S.logo;
+    else{const c=S.photoUrls['__logo__'];if(c&&c.src===S.logo)logo=c.url;}
+  }
+  return{lang:S.lang,logo,photos,photoState:{...S.photoState},fields,toggles,p6links:[...(S.p6links||[])],projectId:S.currentProjectId,projectName:S.currentProjectName,ts:Date.now()};
+}
+
+function _writeDraftLocal(){
+  try{localStorage.setItem(DRAFT_KEY,JSON.stringify(_draftSnapshot()));}
+  catch(e){console.warn('draft localStorage:',e);}
+}
+
+function scheduleAutosave(){
+  AS.dirty=true;
+  clearTimeout(AS.timer);
+  autosaveSetStatus('saving');
+  AS.timer=setTimeout(_autosaveRun,1500);
+}
+
+async function _autosaveRun(){
+  if(AS.saving){scheduleAutosave();return;}
+  AS.saving=true;AS.dirty=false;
+  try{
+    _writeDraftLocal();                       // 1) buffer locale: mai perdere il lavoro
+    if(S.currentProjectId){                   // 2) sync Supabase se un progetto è in uso
+      const state=await buildStateForSave();
+      await sbRest(`projects?id=eq.${S.currentProjectId}`,{method:'PATCH',body:JSON.stringify({state})});
+      _writeDraftLocal();
+      autosaveSetStatus('saved');
+    }else{
+      autosaveSetStatus('local');
+    }
+  }catch(e){
+    console.error('autosave:',e);
+    autosaveSetStatus('error');
+  }finally{
+    AS.saving=false;
+    if(AS.dirty)scheduleAutosave();
+  }
+}
+
+// Sincronizza le anteprime upload del form con S.photos/S.logo
+function _syncPhotoUploadUI(){
+  const logoUp=document.getElementById('logo-up');
+  const logoPrev=document.getElementById('logo-prev');
+  if(logoUp&&logoPrev){
+    if(S.logo){logoPrev.src=S.logo;logoUp.classList.add('has-img');}
+    else{logoPrev.src='';logoUp.classList.remove('has-img');}
+  }
+  document.querySelectorAll('.photo-up').forEach(wrap=>{
+    const inp=wrap.querySelector('input[type=file]');
+    if(!inp)return;
+    const oc=inp.getAttribute('onchange')||'';
+    const m=oc.match(/handlePhoto\(event,'([^']+)'\)/);
+    if(!m)return;
+    const key=m[1];
+    const prev=wrap.querySelector('.up-prev');
+    if(prev){
+      if(S.photos[key]){prev.src=S.photos[key];wrap.classList.add('has-img');}
+      else{prev.src='';wrap.classList.remove('has-img');}
+    }
+  });
+}
+
+function restoreDraft(){
+  let d;
+  try{d=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');}catch(e){return;}
+  if(!d)return;
+  const hasContent=Object.values(d.fields||{}).some(v=>v)||Object.keys(d.photos||{}).length||d.logo;
+  if(!hasContent)return;
+  FIELD_IDS.forEach(id=>{const el=document.getElementById(id);if(el&&d.fields&&d.fields[id]!==undefined)el.value=d.fields[id];});
+  TOGGLE_IDS.forEach(id=>{const el=document.getElementById(id);if(el&&d.toggles&&d.toggles[id]!==undefined)el.checked=d.toggles[id];});
+  S.logo=d.logo||null;
+  S.photos={...(d.photos||{})};
+  S.photoState={...(d.photoState||{})};
+  Object.values(S.photoState).forEach(s=>{if(s)s.initialized=true;});
+  S.p6links=[...(d.p6links||[])];
+  if(typeof renderP6LinksForm==='function')renderP6LinksForm();
+  _syncPhotoUploadUI();
+  if(d.lang&&d.lang!==S.lang){
+    const btn=document.querySelector(`.lang-btn[onclick="setLang('${d.lang}',this)"]`);
+    setLang(d.lang,btn);
+  }
+  S.currentProjectId=d.projectId||null;
+  S.currentProjectName=d.projectName||null;
+  updateProjectBadge();
+  render();
+  showToast('Lavoro in corso ripristinato ✓');
+}
+
+// ======================================================
 // ARCHIVIO PROGETTI — Supabase backend
 // ======================================================
 const SB_URL='https://iwjagihjnyzxythisedo.supabase.co';
@@ -1501,10 +1715,12 @@ const AM={
   projects:[],
   currentProject:null,
   currentFiles:[],
-  sort:'updated_at.desc',
+  sortMode:'custom',   // custom | recent | az
+  langFilter:'',
   _rfId:null,
   _rfPath:null,
 };
+const AM_FLAGS={IT:'🇮🇹',EN:'🇬🇧',DE:'🇩🇪',FR:'🇫🇷',ES:'🇪🇸',SQ:'🇦🇱'};
 
 // --- Supabase helpers ---
 async function sbRest(path,opts={}){
@@ -1535,12 +1751,40 @@ function sbFileUrl(storagePath){
   return`${SB_URL}/storage/v1/object/public/${SB_BUCKET}/${storagePath}`;
 }
 
-// --- DB ops ---
+// --- DB ops (archiveStore: tutte le letture/scritture archivio passano da qui) ---
 async function amFetchProjects(){
-  let q=`projects?order=${AM.sort}`;
+  const orderMap={custom:'sort_order.asc.nullslast,created_at.asc',recent:'updated_at.desc',az:'name.asc'};
   const s=document.getElementById('am-search-inp').value.trim();
-  if(s)q+=`&name=ilike.*${encodeURIComponent(s)}*`;
-  return sbRest(q)||[];
+  const search=s?`&name=ilike.*${encodeURIComponent(s)}*`:'';
+  let rows;
+  try{
+    rows=await sbRest(`projects?order=${orderMap[AM.sortMode]||orderMap.custom}${search}`);
+  }catch(e){
+    // colonna sort_order non ancora creata → fallback su data
+    if(AM.sortMode==='custom'&&/sort_order/.test(e.message)){
+      rows=await sbRest(`projects?order=updated_at.desc${search}`);
+      AM.sortUnavailable=true;
+    }else throw e;
+  }
+  rows=rows||[];
+  if(AM.langFilter)rows=rows.filter(p=>((p.state&&p.state.lang)||'').toUpperCase()===AM.langFilter);
+  return rows;
+}
+async function amDuplicateProject(id){
+  const rows=await sbRest(`projects?id=eq.${id}&select=name,description,state`);
+  const p=rows&&rows[0];
+  if(!p)throw new Error('Progetto non trovato');
+  const by=sessionStorage.getItem('sh_user')||'team';
+  const r=await sbRest('projects',{method:'POST',body:JSON.stringify({name:p.name+' (copia)',description:p.description||'',created_by:by,state:p.state})});
+  return Array.isArray(r)?r[0]:r;
+}
+async function amPersistOrder(){
+  await Promise.all(AM.projects.map((p,i)=>{
+    const want=(i+1)*10;
+    if(p.sort_order===want)return null;
+    p.sort_order=want;
+    return sbRest(`projects?id=eq.${p.id}`,{method:'PATCH',body:JSON.stringify({sort_order:want})});
+  }));
 }
 async function amFetchFiles(projectId){
   const s=document.getElementById('am-search-inp').value.trim();
@@ -1558,9 +1802,21 @@ async function amCreateProject(name,desc){
   return Array.isArray(r)?r[0]:r;
 }
 async function amDeleteProject(id){
-  // delete storage files
+  // delete storage files (allegati + foto del builder referenziate nello state)
   try{
-    const files=await sbRest(`project_files?project_id=eq.${id}&select=storage_path`);
+    const files=(await sbRest(`project_files?project_id=eq.${id}&select=storage_path`))||[];
+    try{
+      const rows=await sbRest(`projects?id=eq.${id}&select=state`);
+      const st=rows&&rows[0]&&rows[0].state;
+      if(st){
+        [st.logo,...Object.values(st.photos||{})].forEach(u=>{
+          if(u&&typeof u==='string'&&u.includes(`/public/${SB_BUCKET}/`)){
+            const p=u.split(`/public/${SB_BUCKET}/`)[1];
+            if(p)files.push({storage_path:decodeURIComponent(p)});
+          }
+        });
+      }
+    }catch(e){console.warn('state photo cleanup',e);}
     if(files&&files.length){
       await fetch(`${SB_URL}/storage/v1/object/${SB_BUCKET}`,{
         method:'DELETE',
@@ -1606,6 +1862,7 @@ async function amShowList(){
   document.getElementById('am-back-btn').style.display='none';
   document.getElementById('am-hd-title').textContent='📁 Archivio Progetti';
   document.getElementById('am-sort-sel').style.display='';
+  document.getElementById('am-lang-sel').style.display='';
   document.getElementById('am-action-btn').onclick=amNewProject;
   document.getElementById('am-action-btn').innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuovo progetto`;
   document.getElementById('am-search-inp').value='';
@@ -1615,44 +1872,99 @@ async function amShowList(){
 
 async function amRenderList(){
   const grid=document.getElementById('am-grid');
-  grid.innerHTML='<div class="am-loading">⏳ Caricamento…</div>';
+  grid.innerHTML=Array(6).fill('<div class="am-card am-sk"><div class="am-sk-thumb"></div><div class="am-sk-bar" style="width:70%"></div><div class="am-sk-bar" style="width:45%"></div><div class="am-sk-bar" style="width:55%;margin-bottom:16px"></div></div>').join('');
   try{
     const projs=await amFetchProjects();
     AM.projects=projs||[];
+    const filtering=document.getElementById('am-search-inp').value.trim()||AM.langFilter;
     if(!AM.projects.length){
-      grid.innerHTML='<div class="am-empty"><span class="am-empty-icon">📁</span><strong>Nessun progetto</strong><p>Clicca <strong>+ Nuovo progetto</strong> per iniziare.</p></div>';
+      grid.innerHTML=filtering
+        ?'<div class="am-empty"><span class="am-empty-icon">🔍</span><strong>Nessun risultato</strong><p>Prova a cambiare ricerca o filtro lingua.</p></div>'
+        :'<div class="am-empty"><span class="am-empty-icon">🏠</span><strong>L\'archivio è vuoto</strong><p>Salva un check-in dal builder oppure clicca <strong>+ Nuovo progetto</strong> per iniziare.</p></div>';
       return;
     }
-    const counts=await Promise.all(AM.projects.map(p=>amFetchFileCount(p.id).catch(()=>0)));
+    const canDrag=AM.sortMode==='custom'&&!filtering;
     grid.innerHTML=AM.projects.map((p,i)=>{
+      const st=p.state||{};
+      let thumb=null;
+      for(const k of Object.keys(st.photos||{})){
+        const val=st.photos[k];
+        if(val&&val.startsWith('http')){thumb=val;break;}
+      }
+      const lang=((st.lang)||'').toUpperCase();
       const dc=_amDate(p.created_at,'long');
-      const dm=_amDate(p.updated_at,'short');
-      const cnt=counts[i];
-      return`<div class="am-card" onclick="amOpenProject('${p.id}')">
-  <div class="am-card-top">
-    <div class="am-card-icon">🏠</div>
-    <div style="flex:1;min-width:0">
-      <div class="am-card-name">${esc(p.name)}</div>
-      ${p.description?`<div class="am-card-desc">${esc(p.description)}</div>`:''}
-    </div>
+      const dm=_amDate(p.updated_at,'long');
+      return`<div class="am-card am-card2" ${canDrag?'draggable="true"':''} data-idx="${i}" onclick="amOpenProject('${p.id}')">
+  ${canDrag?'<div class="am-drag-handle" title="Trascina per riordinare">⠿</div>':''}
+  <div class="am-card-thumb" style="${thumb?`background-image:url('${thumb}')`:''}">${thumb?'':'🏠'}</div>
+  <div class="am-card-body">
+    <div class="am-card-name2">${esc(p.name)}</div>
+    <div class="am-card-badges">${lang?`<span class="am-lang-badge">${AM_FLAGS[lang]||'🌐'} ${lang}</span>`:'<span class="am-lang-badge muted">— nessun check-in —</span>'}</div>
+    <div class="am-card-dates"><span title="Data creazione">📅 ${dc}</span><span title="Ultima modifica">✏️ ${dm}</span></div>
   </div>
-  <div class="am-card-meta">
-    <span>👤 ${esc(p.created_by)}</span>
-    <span>📅 ${dc}</span>
-    <span>✏️ ${dm}</span>
-  </div>
-  <div class="am-card-footer">
-    <div class="am-card-count">📎 ${cnt} file</div>
-    <div style="display:flex;gap:6px">
-      ${p.state?`<button class="am-card-open" onclick="event.stopPropagation();amGeneratePDF('${p.id}')">📄 Genera PDF</button>`:''}
-      <button class="am-card-del" onclick="event.stopPropagation();amConfirmDelProject('${p.id}','${esc(p.name)}')" title="Elimina">🗑</button>
-    </div>
+  <div class="am-card-acts" onclick="event.stopPropagation()">
+    ${p.state?`<button class="am-act primary" onclick="amLoadInBuilder('${p.id}')" title="Riapri nel builder">📂 Apri</button>
+    <button class="am-act" onclick="amDoDuplicate('${p.id}')" title="Duplica come base per un nuovo lavoro">⧉</button>
+    <button class="am-act" onclick="amGeneratePDF('${p.id}')" title="Scarica PDF">📄</button>`:''}
+    <button class="am-act del" onclick="amConfirmDelProject('${p.id}','${esc(p.name)}')" title="Elimina">🗑</button>
   </div>
 </div>`;
     }).join('');
+    if(canDrag)_amBindDnD(grid);
   }catch(e){
     grid.innerHTML=`<div class="am-empty"><span class="am-empty-icon">⚠️</span><p>Errore: ${esc(e.message)}</p></div>`;
   }
+}
+
+// Drag & drop per l'ordine personalizzato (salvato su Supabase per tutto il team)
+function _amBindDnD(grid){
+  let from=null;
+  grid.querySelectorAll('.am-card2').forEach(card=>{
+    card.addEventListener('dragstart',e=>{
+      from=+card.dataset.idx;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    card.addEventListener('dragend',()=>{
+      card.classList.remove('dragging');
+      grid.querySelectorAll('.drop-target').forEach(c=>c.classList.remove('drop-target'));
+    });
+    card.addEventListener('dragover',e=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      card.classList.add('drop-target');
+    });
+    card.addEventListener('dragleave',()=>card.classList.remove('drop-target'));
+    card.addEventListener('drop',async e=>{
+      e.preventDefault();
+      card.classList.remove('drop-target');
+      const to=+card.dataset.idx;
+      if(from===null||from===to){from=null;return;}
+      const[moved]=AM.projects.splice(from,1);
+      AM.projects.splice(to,0,moved);
+      from=null;
+      try{
+        await amPersistOrder();
+        showToast('Ordine salvato per tutto il team ✓');
+      }catch(err){
+        if(/sort_order/.test(err.message)){
+          alert('Per abilitare l\'ordinamento personalizzato esegui una volta su Supabase → SQL Editor:\n\nalter table projects add column if not exists sort_order integer;');
+        }else{
+          alert('Errore salvataggio ordine: '+err.message);
+        }
+      }
+      amRenderList();
+    });
+  });
+}
+
+async function amDoDuplicate(id){
+  try{
+    showToast('Duplicazione…');
+    await amDuplicateProject(id);
+    showToast('Progetto duplicato ✓ (in fondo alla lista)');
+    amRenderList();
+  }catch(e){alert('Errore duplicazione: '+e.message);}
 }
 
 async function amOpenProject(id){
@@ -1663,6 +1975,7 @@ async function amOpenProject(id){
   document.getElementById('am-back-btn').style.display='flex';
   document.getElementById('am-hd-title').textContent=esc(AM.currentProject.name||'Progetto');
   document.getElementById('am-sort-sel').style.display='none';
+  document.getElementById('am-lang-sel').style.display='none';
   document.getElementById('am-action-btn').onclick=()=>document.getElementById('am-file-input').click();
   document.getElementById('am-action-btn').innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg> Carica file`;
   document.getElementById('am-search-inp').placeholder='🔍 Cerca file…';
@@ -1829,7 +2142,15 @@ async function amGeneratePDF(id){
   closeAM();
   render();
   await new Promise(r=>setTimeout(r,400));
+  await _waitPreviewImages();
   generatePDF();
+}
+
+// Attende che tutte le immagini dell'anteprima (anche remote da Storage) siano caricate
+function _waitPreviewImages(){
+  const imgs=[...document.querySelectorAll('#preview-panel img')];
+  return Promise.all(imgs.map(im=>im.complete?null:new Promise(r=>{im.onload=im.onerror=r;})))
+    .then(()=>new Promise(r=>setTimeout(r,150)));
 }
 
 async function amOpenSaveCheckin(preselectedProjectId){
@@ -1914,7 +2235,11 @@ function amSearch(){
   else amRenderDetail();
 }
 function amSort(){
-  AM.sort=document.getElementById('am-sort-sel').value;
+  AM.sortMode=document.getElementById('am-sort-sel').value;
+  amRenderList();
+}
+function amLangFilter(){
+  AM.langFilter=document.getElementById('am-lang-sel').value;
   amRenderList();
 }
 
@@ -1968,7 +2293,7 @@ document.addEventListener('mousemove',e=>{
   _applyPhotoT(_drag.img,st);
 });
 document.addEventListener('mouseup',()=>{
-  if(_drag){_drag.photoEl.style.cursor='grab';_drag=null;}
+  if(_drag){_drag.photoEl.style.cursor='grab';_drag=null;scheduleAutosave();}
 });
 document.getElementById('preview-panel').addEventListener('wheel',e=>{
   const photoEl=e.target.closest('.p-photo');
@@ -2021,6 +2346,33 @@ function clearLogo(wrap){
 updateFormLabels();
 render();
 
+// --- Autosave: indicatore di stato in toolbar ---
+(function(){
+  const badge=document.getElementById('proj-badge');
+  if(!badge)return;
+  const chip=document.createElement('span');
+  chip.id='as-chip';
+  chip.style.cssText='font-size:11px;font-weight:600;color:#8fce8f;margin-left:10px;white-space:nowrap;transition:color .2s';
+  chip.onclick=()=>{if(AS.status==='error')_autosaveRun();};
+  badge.parentNode.insertBefore(chip,badge.nextSibling);
+})();
+
+// --- Autosave: ogni modifica al form ---
+(function(){
+  const fp=document.querySelector('.form-panel');
+  if(!fp)return;
+  fp.addEventListener('input',()=>scheduleAutosave());
+  fp.addEventListener('change',()=>scheduleAutosave());
+})();
+
+// --- Autosave: zoom foto in anteprima ---
+document.getElementById('preview-panel').addEventListener('wheel',()=>{
+  if(document.querySelector('.p-photo:hover'))scheduleAutosave();
+},{passive:true});
+
+// --- Ripristino bozza all'apertura ---
+restoreDraft();
+
 // Add delete buttons to all photo upload areas
 document.querySelectorAll('.photo-up').forEach(wrap=>{
   const inp=wrap.querySelector('input[type=file]');
@@ -2059,11 +2411,19 @@ document.querySelectorAll('.photo-up').forEach(wrap=>{
     </div>
     <div class="am-hd-r">
       <input class="am-search" id="am-search-inp" placeholder="🔍 Cerca…" oninput="amSearch()">
+      <select class="am-sort" id="am-lang-sel" onchange="amLangFilter()" title="Filtra per lingua">
+        <option value="">🌐 Tutte le lingue</option>
+        <option value="IT">🇮🇹 Italiano</option>
+        <option value="EN">🇬🇧 English</option>
+        <option value="DE">🇩🇪 Deutsch</option>
+        <option value="FR">🇫🇷 Français</option>
+        <option value="ES">🇪🇸 Español</option>
+        <option value="SQ">🇦🇱 Shqip</option>
+      </select>
       <select class="am-sort" id="am-sort-sel" onchange="amSort()">
-        <option value="updated_at.desc">Ultima modifica</option>
-        <option value="created_at.desc">Data creazione</option>
-        <option value="name.asc">Nome A–Z</option>
-        <option value="created_by.asc">Autore</option>
+        <option value="custom">⠿ Ordine personalizzato</option>
+        <option value="recent">Più recenti</option>
+        <option value="az">Nome A–Z</option>
       </select>
       <button class="am-btn-gold" id="am-action-btn" onclick="amNewProject()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>

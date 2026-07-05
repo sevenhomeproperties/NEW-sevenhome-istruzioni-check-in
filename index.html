@@ -1422,7 +1422,17 @@ function clearCurrentProject(){
 }
 
 function newProject(){
-  if(!confirm('Iniziare un nuovo progetto?\nIl lavoro corrente verrà rimosso dal builder (se salvato, resta in archivio).'))return;
+  const hasContent=FIELD_IDS.some(id=>{const el=document.getElementById(id);return el&&el.value;})||Object.keys(S.photos).length||S.logo;
+  if(hasContent&&!S.currentProjectId){
+    // lavoro mai salvato come progetto: l'unica copia andrebbe persa
+    if(confirm('⚠️ Il lavoro corrente NON è salvato in archivio e andrebbe perso.\n\nVuoi salvarlo prima come progetto?\n\nOK = salva prima · Annulla = continua senza salvare')){
+      saveProject();
+      return;
+    }
+    if(!confirm('Sicuro? Il lavoro corrente verrà eliminato definitivamente.'))return;
+  } else {
+    if(!confirm('Iniziare un nuovo progetto?\nIl builder verrà svuotato (il lavoro salvato resta in archivio).'))return;
+  }
   FIELD_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   TOGGLE_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=true; });
   S.logo=null;

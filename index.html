@@ -2335,7 +2335,7 @@ body{padding:60px 0 100px!important;overflow-x:hidden!important;overflow-y:auto!
 <body>
 <div class="g-hd"><div class="g-hd-icon">S7</div><div class="g-hd-name">SevenHome <span>Properties</span></div></div>
 ${pages}
-<a class="g-dl" href="${sbFileUrl(`guest/${gid}/guida.pdf`)}" onclick="return gaDownload(this)">📥 ${dl}</a>
+<a class="g-dl" href="${sbFileUrl(`guest/${gid}/guida.pdf`)}?download=sevenhome-checkin.pdf">📥 ${dl}</a>
 <script>
 function copyWifiPass(){
   var el=document.getElementById('p6-pass-val');
@@ -2343,23 +2343,6 @@ function copyWifiPass(){
   var done=function(){var b=document.querySelector('.p6-copy-btn');if(b){var o=b.textContent;b.textContent='✓';setTimeout(function(){b.textContent=o;},1500);}};
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(el.textContent).then(done);}
   else{var r=document.createRange();r.selectNode(el);var s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy');s.removeAllRanges();done();}
-}
-function gaDownload(a){
-  // download cross-origin: scarica come blob (l'attributo download da solo verrebbe ignorato)
-  var lbl=a.textContent;
-  a.textContent='⏳ …';
-  fetch(a.href).then(function(r){return r.blob();}).then(function(b){
-    var u=URL.createObjectURL(b);
-    var tmp=document.createElement('a');
-    tmp.href=u;
-    tmp.download='sevenhome-checkin.pdf';
-    document.body.appendChild(tmp);
-    tmp.click();
-    tmp.remove();
-    setTimeout(function(){URL.revokeObjectURL(u);},4000);
-    a.textContent=lbl;
-  }).catch(function(){a.textContent=lbl;window.open(a.href,'_blank');});
-  return false;
 }
 function gaFit(){
   var w=Math.min(document.documentElement.clientWidth,834)-12;

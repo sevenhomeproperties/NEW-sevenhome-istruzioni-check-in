@@ -880,6 +880,7 @@ const S = {
   p6links:[],
   currentProjectId: null,
   currentProjectName: null,
+  guestId: null,
 };
 
 // ======================================================
@@ -1441,6 +1442,7 @@ function newProject(){
   S.photoUrls={};
   S._pendingUploads={};
   S.p6links=[];
+  S.guestId=null;
   renderP6LinksForm();
   _syncPhotoUploadUI();
   clearCurrentProject();
@@ -1494,7 +1496,7 @@ async function buildStateForSave(){
     catch(e){ failed.push('logo'); }
   }
   if(failed.length) throw new Error('Immagini non caricate su Storage ('+failed.length+'): controlla la connessione e riprova. Nessun dato è stato salvato.');
-  return {lang:S.lang, logo, photos, photoState:{...S.photoState}, fields, toggles, p6links:[...(S.p6links||[])]};
+  return {lang:S.lang, logo, photos, photoState:{...S.photoState}, fields, toggles, p6links:[...(S.p6links||[])], guestId:S.guestId||null};
 }
 
 async function confirmSave(update){
@@ -1502,6 +1504,7 @@ async function confirmSave(update){
   closeSaveDialog();
   showToast('Salvataggio in corso…');
   try{
+    if(!S.guestId) S.guestId=crypto.randomUUID();
     const state = await buildStateForSave();
     if(update && S.currentProjectId){
       await sbRest(`projects?id=eq.${S.currentProjectId}`,{method:'PATCH',body:JSON.stringify({name,state})});
@@ -1519,6 +1522,13 @@ async function confirmSave(update){
     }
     _writeDraftLocal();
     autosaveSetStatus('saved');
+    // Pubblica/aggiorna la Guest Area (stesso URL, contenuto aggiornato)
+    try{
+      const url = await publishGuestArea(state);
+      openGuestDialog(url);
+    }catch(e){
+      alert('Progetto salvato ✓, ma pubblicazione Guest Area non riuscita:\n'+e.message+'\n\nRisalva per riprovare.');
+    }
   }catch(e){ alert('Errore salvataggio: '+e.message); autosaveSetStatus('error'); }
 }
 
@@ -1542,6 +1552,7 @@ async function loadProject(id){
   S.photoState = {...(st.photoState||{})};
   Object.values(S.photoState).forEach(s=>{ if(s) s.initialized=true; });
   S.p6links = [...(st.p6links||[])];
+  S.guestId = st.guestId || null;
   renderP6LinksForm();
 
   const logoUp = document.getElementById('logo-up');
@@ -1650,7 +1661,7 @@ function _draftSnapshot(){
     if(!S.logo.startsWith('data:'))logo=S.logo;
     else{const c=S.photoUrls['__logo__'];if(c&&c.src===S.logo)logo=c.url;}
   }
-  return{lang:S.lang,logo,photos,photoState:{...S.photoState},fields,toggles,p6links:[...(S.p6links||[])],projectId:S.currentProjectId,projectName:S.currentProjectName,ts:Date.now()};
+  return{lang:S.lang,logo,photos,photoState:{...S.photoState},fields,toggles,p6links:[...(S.p6links||[])],projectId:S.currentProjectId,projectName:S.currentProjectName,guestId:S.guestId||null,ts:Date.now()};
 }
 
 function _writeDraftLocal(){
@@ -1731,6 +1742,7 @@ function restoreDraft(){
   }
   S.currentProjectId=d.projectId||null;
   S.currentProjectName=d.projectName||null;
+  S.guestId=d.guestId||null;
   updateProjectBadge();
   render();
   showToast('Lavoro in corso ripristinato ✓');
@@ -1771,10 +1783,10 @@ async function sbRest(path,opts={}){
   if(res.status===204)return null;
   try{return await res.json();}catch{return null;}
 }
-async function sbStorage(method,path,body,contentType){
+async function sbStorage(method,path,body,contentType,upsert){
   const res=await fetch(`${SB_URL}/storage/v1/object/${SB_BUCKET}/${path}`,{
     method,
-    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,...(contentType?{'Content-Type':contentType}:{})},
+    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,...(contentType?{'Content-Type':contentType}:{}),...(upsert?{'x-upsert':'true'}:{})},
     ...(body?{body}:{})
   });
   if(!res.ok){const e=await res.text();throw new Error(e);}
@@ -1808,7 +1820,8 @@ async function amDuplicateProject(id){
   const p=rows&&rows[0];
   if(!p)throw new Error('Progetto non trovato');
   const by=sessionStorage.getItem('sh_user')||'team';
-  const r=await sbRest('projects',{method:'POST',body:JSON.stringify({name:p.name+' (copia)',description:p.description||'',created_by:by,state:p.state})});
+  const stCopy=p.state?{...p.state,guestId:null}:p.state; // la copia avrà una sua Guest Area al primo salvataggio
+  const r=await sbRest('projects',{method:'POST',body:JSON.stringify({name:p.name+' (copia)',description:p.description||'',created_by:by,state:stCopy})});
   return Array.isArray(r)?r[0]:r;
 }
 async function amPersistOrder(){
@@ -1848,6 +1861,10 @@ async function amDeleteProject(id){
             if(p)files.push({storage_path:decodeURIComponent(p)});
           }
         });
+        if(st.guestId){
+          files.push({storage_path:`guest/${st.guestId}/guida.html`});
+          files.push({storage_path:`guest/${st.guestId}/guida.pdf`});
+        }
       }
     }catch(e){console.warn('state photo cleanup',e);}
     if(files&&files.length){
@@ -1939,6 +1956,7 @@ async function amRenderList(){
     ${p.state?`<button class="am-act primary" onclick="amLoadInBuilder('${p.id}')" title="Riapri nel builder">📂 Apri</button>
     <button class="am-act" onclick="amDoDuplicate('${p.id}')" title="Duplica come base per un nuovo lavoro">⧉</button>
     <button class="am-act" onclick="amGeneratePDF('${p.id}')" title="Scarica PDF">📄</button>`:''}
+    ${p.state&&p.state.guestId?`<button class="am-act" onclick="openGuestDialog(sbFileUrl('guest/${p.state.guestId}/guida.html'))" title="Link Guest Area">🔗</button>`:''}
     <button class="am-act del" onclick="amConfirmDelProject('${p.id}','${esc(p.name)}')" title="Elimina">🗑</button>
   </div>
 </div>`;
@@ -2167,6 +2185,7 @@ async function amGeneratePDF(id){
   S.photoState={...(st.photoState||{})};
   Object.values(S.photoState).forEach(s=>{if(s)s.initialized=true;});
   S.p6links=[...(st.p6links||[])];
+  S.guestId=st.guestId||null;
   const logoUp=document.getElementById('logo-up');const logoPrev=document.getElementById('logo-prev');
   if(logoUp&&logoPrev){if(S.logo){logoPrev.src=S.logo;logoUp.classList.add('has-img');}else{logoPrev.src='';logoUp.classList.remove('has-img');}}
   document.querySelectorAll('.photo-up').forEach(wrap=>{const inp=wrap.querySelector('input[type=file]');if(!inp)return;const oc=inp.getAttribute('onchange')||'';const m=oc.match(/handlePhoto\(event,'([^']+)'\)/);if(!m)return;const key=m[1];const prev=wrap.querySelector('.up-prev');if(prev){if(S.photos[key]){prev.src=S.photos[key];wrap.classList.add('has-img');}else{prev.src='';wrap.classList.remove('has-img');}}});
@@ -2262,6 +2281,120 @@ async function _buildPDF(onMsg){
   return pdf;
 }
 
+// ======================================================
+// GUEST AREA — pagina pubblica per l'ospite su Supabase Storage
+// guest/<uuid>/guida.html + guida.pdf — URL stabile, contenuto
+// sovrascritto a ogni salvataggio (x-upsert). La pagina è costruita
+// SOLO dal DOM dell'anteprima: nessuno stato interno, nessuna chiave.
+// ======================================================
+const GA_DL_LABEL={IT:'Scarica guida offline',EN:'Download offline guide',DE:'Offline-Guide herunterladen',FR:'Télécharger le guide hors ligne',ES:'Descargar guía offline',SQ:'Shkarko udhëzuesin offline'};
+
+function buildGuestHtml(){
+  const styles=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
+  const els=[document.getElementById('pp1')];
+  ['p2','p3','p4','p5','p6'].forEach(k=>{if(tog('tog-'+k)){const el=document.getElementById('pp-'+k);if(el)els.push(el);}});
+  const pages=els.filter(Boolean).map(el=>{
+    const c=el.cloneNode(true);
+    c.removeAttribute('id');
+    c.querySelectorAll('.p-photo-hint,.p-photo-zoom').forEach(n=>n.remove());
+    c.querySelectorAll('img').forEach(im=>im.removeAttribute('onload'));
+    c.querySelectorAll('[id]').forEach(n=>{if(n.id!=='p6-pass-val')n.removeAttribute('id');});
+    return `<div class="g-page"><div class="g-scale">${c.outerHTML}</div></div>`;
+  }).join('');
+  const title=`SevenHome · Check-in${v('f-city')?' — '+esc(v('f-city')):''}`;
+  const dl=GA_DL_LABEL[S.lang]||GA_DL_LABEL.IT;
+  return `<!DOCTYPE html>
+<html lang="${(S.lang||'it').toLowerCase()}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+${styles}
+html,body{margin:0;padding:0;background:#EDEAE4;font-family:'Inter',sans-serif}
+body{padding:60px 0 100px;overflow-x:hidden}
+.g-hd{position:fixed;top:0;left:0;right:0;background:#1A1A2E;color:#fff;display:flex;align-items:center;gap:10px;padding:11px 16px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+.g-hd-icon{width:32px;height:32px;background:#C9A84C;color:#1A1A2E;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+.g-hd-name{font-size:14.5px;font-weight:700;letter-spacing:.3px}
+.g-hd-name span{color:#C9A84C;font-weight:400}
+.g-page{margin:14px auto;overflow:hidden;display:flex;justify-content:center}
+.g-scale{width:794px;flex-shrink:0;transform-origin:top center;box-shadow:0 4px 24px rgba(0,0,0,.12)}
+.g-scale .pp{margin:0}
+.p-photo{cursor:default!important}
+.g-dl{position:fixed;bottom:14px;left:14px;right:14px;max-width:520px;margin:0 auto;background:#C9A84C;color:#1A1A2E;font-family:'Inter',sans-serif;font-weight:800;font-size:16px;text-align:center;padding:16px;border-radius:14px;text-decoration:none;box-shadow:0 8px 28px rgba(0,0,0,.3);z-index:100;display:block}
+.g-dl:active{transform:scale(.98)}
+</style>
+</head>
+<body>
+<div class="g-hd"><div class="g-hd-icon">S7</div><div class="g-hd-name">SevenHome <span>Properties</span></div></div>
+${pages}
+<a class="g-dl" href="guida.pdf" download>📥 ${dl}</a>
+<script>
+function copyWifiPass(){
+  var el=document.getElementById('p6-pass-val');
+  if(!el)return;
+  var done=function(){var b=document.querySelector('.p6-copy-btn');if(b){var o=b.textContent;b.textContent='✓';setTimeout(function(){b.textContent=o;},1500);}};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(el.textContent).then(done);}
+  else{var r=document.createRange();r.selectNode(el);var s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy');s.removeAllRanges();done();}
+}
+function gaFit(){
+  var w=Math.min(document.documentElement.clientWidth,834)-12;
+  var s=Math.min(1,w/794);
+  document.querySelectorAll('.g-scale').forEach(function(el){
+    el.style.transform='scale('+s+')';
+    el.parentElement.style.height=(el.offsetHeight*s)+'px';
+  });
+}
+addEventListener('resize',gaFit);
+addEventListener('load',gaFit);
+gaFit();
+</${'script'}>
+</body>
+</html>`;
+}
+
+async function publishGuestArea(state){
+  const gid=state.guestId;
+  if(!gid)throw new Error('Identificativo Guest Area mancante');
+  const overlay=document.getElementById('pdf-loading');
+  const msgEl=document.getElementById('pdf-msg');
+  overlay.classList.add('active');
+  const bakP=S.photos,bakL=S.logo;
+  try{
+    // usa le versioni Storage delle immagini: pagina e PDF pubblici identici
+    S.photos={...state.photos};
+    S.logo=state.logo;
+    render();
+    await _waitPreviewImages();
+    const pdf=await _buildPDF(m=>msgEl.textContent='Guest Area — '+m);
+    msgEl.textContent='Pubblicazione Guest Area…';
+    const html=buildGuestHtml();
+    await sbStorage('POST',`guest/${gid}/guida.html`,new Blob([html],{type:'text/html'}),'text/html; charset=utf-8',true);
+    await sbStorage('POST',`guest/${gid}/guida.pdf`,pdf.output('blob'),'application/pdf',true);
+    return sbFileUrl(`guest/${gid}/guida.html`);
+  }finally{
+    S.photos=bakP;
+    S.logo=bakL;
+    render();
+    overlay.classList.remove('active');
+  }
+}
+
+function openGuestDialog(url){
+  document.getElementById('ga-url').value=url;
+  document.getElementById('ga-msg').value='Ecco la tua Guest Area SevenHome con tutte le istruzioni per l\'arrivo e il soggiorno: '+url;
+  document.getElementById('ga-dlg').classList.add('open');
+}
+function gaCopy(kind){
+  const el=document.getElementById(kind==='msg'?'ga-msg':'ga-url');
+  const done=()=>showToast('Copiato ✓');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(el.value).then(done).catch(()=>{el.select();document.execCommand('copy');done();});
+  }else{el.select();document.execCommand('copy');done();}
+}
+
 // Search & sort handlers
 function amSearch(){
   if(AM.view==='list')amRenderList();
@@ -2297,6 +2430,7 @@ document.addEventListener('keydown',e=>{
     document.getElementById('am-np-dlg').classList.remove('open');
     document.getElementById('am-rf-dlg').classList.remove('open');
     document.getElementById('am-sc-dlg').classList.remove('open');
+    document.getElementById('ga-dlg').classList.remove('open');
   }
 });
 
@@ -2508,6 +2642,28 @@ document.querySelectorAll('.photo-up').forEach(wrap=>{
     <div class="am-dialog-btns">
       <button class="btn-cancel" onclick="document.getElementById('am-rf-dlg').classList.remove('open')">Annulla</button>
       <button class="btn-confirm" onclick="amDoRename()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dialog: Guest Area link -->
+<div class="am-dialog-ov" id="ga-dlg">
+  <div class="am-dialog">
+    <h3>🔗 Guest Area pronta</h3>
+    <p style="font-size:12.5px;color:#888;margin:0 0 12px;line-height:1.5">Link pubblico per l'ospite. Resta <strong>lo stesso</strong> anche quando aggiorni e risalvi le istruzioni.</p>
+    <div class="am-df">
+      <label>Link Guest Area</label>
+      <input type="text" id="ga-url" readonly onclick="this.select()">
+    </div>
+    <div class="am-df">
+      <label>Messaggio pronto per l'ospite</label>
+      <textarea id="ga-msg" rows="3" readonly onclick="this.select()"></textarea>
+    </div>
+    <div class="am-dialog-btns" style="flex-wrap:wrap">
+      <button class="btn-cancel" onclick="document.getElementById('ga-dlg').classList.remove('open')">Chiudi</button>
+      <button class="btn-confirm" onclick="gaCopy('url')">📋 Copia link</button>
+      <button class="btn-confirm" onclick="gaCopy('msg')">💬 Copia messaggio</button>
+      <button class="btn-confirm" onclick="window.open(document.getElementById('ga-url').value,'_blank')">↗ Apri</button>
     </div>
   </div>
 </div>

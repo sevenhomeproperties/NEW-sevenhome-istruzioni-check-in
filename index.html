@@ -1956,7 +1956,7 @@ async function amRenderList(){
     ${p.state?`<button class="am-act primary" onclick="amLoadInBuilder('${p.id}')" title="Riapri nel builder">📂 Apri</button>
     <button class="am-act" onclick="amDoDuplicate('${p.id}')" title="Duplica come base per un nuovo lavoro">⧉</button>
     <button class="am-act" onclick="amGeneratePDF('${p.id}')" title="Scarica PDF">📄</button>`:''}
-    ${p.state&&p.state.guestId?`<button class="am-act" onclick="openGuestDialog(sbFileUrl('guest/${p.state.guestId}/guida.html'))" title="Link Guest Area">🔗</button>`:''}
+    ${p.state&&p.state.guestId?`<button class="am-act" onclick="openGuestDialog(gaViewerUrl('${p.state.guestId}'))" title="Link Guest Area">🔗</button>`:''}
     <button class="am-act del" onclick="amConfirmDelProject('${p.id}','${esc(p.name)}')" title="Elimina">🗑</button>
   </div>
 </div>`;
@@ -2288,8 +2288,13 @@ async function _buildPDF(onMsg){
 // SOLO dal DOM dell'anteprima: nessuno stato interno, nessuna chiave.
 // ======================================================
 const GA_DL_LABEL={IT:'Scarica guida offline',EN:'Download offline guide',DE:'Offline-Guide herunterladen',FR:'Télécharger le guide hors ligne',ES:'Descargar guía offline',SQ:'Shkarko udhëzuesin offline'};
+// Supabase Storage serve gli HTML come text/plain (anti-phishing): il link
+// condiviso passa dal viewer su GitHub Pages, che carica la guida dallo Storage.
+function gaViewerUrl(gid){
+  return `https://danielpinna7.github.io/NEW-sevenhome-istruzioni-check-in/guest.html?g=${gid}`;
+}
 
-function buildGuestHtml(){
+function buildGuestHtml(gid){
   const styles=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
   const els=[document.getElementById('pp1')];
   ['p2','p3','p4','p5','p6'].forEach(k=>{if(tog('tog-'+k)){const el=document.getElementById('pp-'+k);if(el)els.push(el);}});
@@ -2330,7 +2335,7 @@ body{padding:60px 0 100px;overflow-x:hidden}
 <body>
 <div class="g-hd"><div class="g-hd-icon">S7</div><div class="g-hd-name">SevenHome <span>Properties</span></div></div>
 ${pages}
-<a class="g-dl" href="guida.pdf" download>📥 ${dl}</a>
+<a class="g-dl" href="${sbFileUrl(`guest/${gid}/guida.pdf`)}" download>📥 ${dl}</a>
 <script>
 function copyWifiPass(){
   var el=document.getElementById('p6-pass-val');
@@ -2370,10 +2375,10 @@ async function publishGuestArea(state){
     await _waitPreviewImages();
     const pdf=await _buildPDF(m=>msgEl.textContent='Guest Area — '+m);
     msgEl.textContent='Pubblicazione Guest Area…';
-    const html=buildGuestHtml();
+    const html=buildGuestHtml(gid);
     await sbStorage('POST',`guest/${gid}/guida.html`,new Blob([html],{type:'text/html'}),'text/html; charset=utf-8',true);
     await sbStorage('POST',`guest/${gid}/guida.pdf`,pdf.output('blob'),'application/pdf',true);
-    return sbFileUrl(`guest/${gid}/guida.html`);
+    return gaViewerUrl(gid);
   }finally{
     S.photos=bakP;
     S.logo=bakL;

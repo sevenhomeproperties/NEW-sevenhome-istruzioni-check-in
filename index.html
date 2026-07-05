@@ -2333,7 +2333,7 @@ body{padding:60px 0 100px!important;overflow-x:hidden!important;overflow-y:auto!
 </style>
 </head>
 <body>
-<div class="g-hd"><div class="g-hd-icon">S7</div><div class="g-hd-name">SevenHome <span>Properties</span></div></div>
+<div class="g-hd">${S.logo&&!S.logo.startsWith('data:')?`<img src="${S.logo}" alt="SevenHome" style="height:38px;display:block;background:#fff;border-radius:8px;padding:3px 8px">`:'<div class="g-hd-icon">S7</div>'}<div class="g-hd-name">SevenHome <span>Properties</span></div></div>
 ${pages}
 <a class="g-dl" href="${sbFileUrl(`guest/${gid}/guida.pdf`)}?download=sevenhome-checkin.pdf">📥 ${dl}</a>
 <script>

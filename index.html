@@ -2318,13 +2318,13 @@ function buildGuestHtml(gid){
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 ${styles}
-html,body{margin:0;padding:0;background:#EDEAE4;font-family:'Inter',sans-serif}
-body{padding:60px 0 100px;overflow-x:hidden}
+html,body{margin:0;padding:0;background:#EDEAE4;font-family:'Inter',sans-serif;min-height:0;height:auto!important;overflow:visible!important}
+body{padding:60px 0 100px!important;overflow-x:hidden!important;overflow-y:auto!important}
 .g-hd{position:fixed;top:0;left:0;right:0;background:#1A1A2E;color:#fff;display:flex;align-items:center;gap:10px;padding:11px 16px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
 .g-hd-icon{width:32px;height:32px;background:#C9A84C;color:#1A1A2E;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
 .g-hd-name{font-size:14.5px;font-weight:700;letter-spacing:.3px}
 .g-hd-name span{color:#C9A84C;font-weight:400}
-.g-page{margin:14px auto;overflow:hidden;display:flex;justify-content:center}
+.g-page{margin:14px auto;overflow:hidden;display:flex;justify-content:center;align-items:flex-start}
 .g-scale{width:794px;flex-shrink:0;transform-origin:top center;box-shadow:0 4px 24px rgba(0,0,0,.12)}
 .g-scale .pp{margin:0}
 .p-photo{cursor:default!important}
@@ -2335,7 +2335,7 @@ body{padding:60px 0 100px;overflow-x:hidden}
 <body>
 <div class="g-hd"><div class="g-hd-icon">S7</div><div class="g-hd-name">SevenHome <span>Properties</span></div></div>
 ${pages}
-<a class="g-dl" href="${sbFileUrl(`guest/${gid}/guida.pdf`)}" download>📥 ${dl}</a>
+<a class="g-dl" href="${sbFileUrl(`guest/${gid}/guida.pdf`)}" onclick="return gaDownload(this)">📥 ${dl}</a>
 <script>
 function copyWifiPass(){
   var el=document.getElementById('p6-pass-val');
@@ -2344,12 +2344,29 @@ function copyWifiPass(){
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(el.textContent).then(done);}
   else{var r=document.createRange();r.selectNode(el);var s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy');s.removeAllRanges();done();}
 }
+function gaDownload(a){
+  // download cross-origin: scarica come blob (l'attributo download da solo verrebbe ignorato)
+  var lbl=a.textContent;
+  a.textContent='⏳ …';
+  fetch(a.href).then(function(r){return r.blob();}).then(function(b){
+    var u=URL.createObjectURL(b);
+    var tmp=document.createElement('a');
+    tmp.href=u;
+    tmp.download='sevenhome-checkin.pdf';
+    document.body.appendChild(tmp);
+    tmp.click();
+    tmp.remove();
+    setTimeout(function(){URL.revokeObjectURL(u);},4000);
+    a.textContent=lbl;
+  }).catch(function(){a.textContent=lbl;window.open(a.href,'_blank');});
+  return false;
+}
 function gaFit(){
   var w=Math.min(document.documentElement.clientWidth,834)-12;
   var s=Math.min(1,w/794);
   document.querySelectorAll('.g-scale').forEach(function(el){
     el.style.transform='scale('+s+')';
-    el.parentElement.style.height=(el.offsetHeight*s)+'px';
+    el.parentElement.style.height=Math.ceil(1123*s)+'px'; /* pagina A4 fissa 794x1123 */
   });
 }
 addEventListener('resize',gaFit);

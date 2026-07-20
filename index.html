@@ -2201,8 +2201,17 @@ async function amGeneratePDF(id){
 // Attende che tutte le immagini dell'anteprima (anche remote da Storage) siano caricate
 function _waitPreviewImages(){
   const imgs=[...document.querySelectorAll('#preview-panel img')];
-  return Promise.all(imgs.map(im=>im.complete?null:new Promise(r=>{im.onload=im.onerror=r;})))
-    .then(()=>new Promise(r=>setTimeout(r,150)));
+  // addEventListener: NON sovrascrivere l'attributo onload (initPhotoImg applica il ritaglio)
+  return Promise.all(imgs.map(im=>im.complete?null:new Promise(r=>{im.addEventListener('load',r,{once:true});im.addEventListener('error',r,{once:true});})))
+    .then(()=>{
+      // riapplica le trasformazioni foto in ogni caso (difesa contro onload persi)
+      document.querySelectorAll('#preview-panel .p-photo').forEach(ph=>{
+        const im=ph.querySelector('.p-photo-img');
+        const key=ph.dataset.photoKey;
+        if(im&&key&&im.complete&&im.naturalWidth)initPhotoImg(im,key);
+      });
+      return new Promise(r=>setTimeout(r,150));
+    });
 }
 
 async function amOpenSaveCheckin(preselectedProjectId){

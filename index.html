@@ -345,6 +345,28 @@ textarea{resize:vertical;min-height:64px}
 .p6-stay-lbl{font-size:13px;font-weight:600;flex:1}
 .p6-stay-arr{color:#C9A84C;font-weight:700;font-size:14px}
 .am-loading{text-align:center;padding:50px;color:#bbb;font-size:13px;grid-column:1/-1}
+/* GALLERIA IMMAGINI */
+.gal-apt{background:#fff;border:1.5px solid #e8e6e1;border-radius:14px;padding:18px 20px;margin-bottom:18px}
+.gal-apt-hd{display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid #ebe9e4}
+.gal-logo{height:28px;width:auto;border-radius:5px;flex-shrink:0}
+.gal-apt-name{font-size:15px;font-weight:700;color:#1A1A2E;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gal-apt-lang{background:#1A1A2E;color:#C9A84C;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:100px;flex-shrink:0}
+.gal-apt-count{font-size:11.5px;color:#aaa;flex-shrink:0}
+.gal-sec{margin-bottom:14px}
+.gal-sec-ttl{font-size:12px;font-weight:600;color:#8a8578;margin-bottom:8px}
+.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.gal-thumb{position:relative;display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#f0ede8;border:1px solid #e8e6e1;text-decoration:none}
+.gal-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
+.gal-thumb:hover img{transform:scale(1.05)}
+.gal-thumb-miss{display:none}
+.gal-thumb.missing{border-color:#e7b4b4;background:#fbeeee}
+.gal-thumb.missing img{display:none}
+.gal-thumb.missing .gal-thumb-miss{display:flex;align-items:center;justify-content:center;position:absolute;inset:0;font-size:11px;font-weight:600;color:#c0392b;text-align:center;padding:6px}
+.gal-empty-apt{font-size:12.5px;color:#bbb;padding:6px 0}
+@media(max-width:640px){
+.gal-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
+.gal-apt{padding:14px}
+}
 @media(max-width:640px){
   .am-hd{padding:10px 14px;flex-wrap:wrap;gap:8px}
   .am-hd-title{font-size:14px}
@@ -410,6 +432,10 @@ textarea{resize:vertical;min-height:64px}
     <button class="btn-sec" onclick="openAM()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
       📁 Archivio
+    </button>
+    <button class="btn-sec" onclick="openGallery()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      🖼️ Immagini
     </button>
     <div class="proj-badge" id="proj-badge">
       <span>📂</span>
@@ -996,6 +1022,21 @@ function compressForStorage(dataUrl){
     };
     img.onerror=()=>reject(new Error('Immagine non leggibile'));
     img.src=dataUrl;
+  });
+}
+
+// Scarica un'immagine remota e la converte in data URL (same-origin per html2canvas).
+// I data URL non tainano il canvas: evita i riquadri vuoti nei PDF da foto su Storage.
+async function urlToDataUrl(url){
+  if(!url||url.startsWith('data:'))return url;
+  const res=await fetch(url,{mode:'cors',cache:'reload'});
+  if(!res.ok)throw new Error('fetch '+res.status);
+  const blob=await res.blob();
+  return await new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result);
+    r.onerror=()=>reject(new Error('read blob'));
+    r.readAsDataURL(blob);
   });
 }
 
@@ -1795,6 +1836,24 @@ async function sbStorage(method,path,body,contentType,upsert){
 function sbFileUrl(storagePath){
   return`${SB_URL}/storage/v1/object/public/${SB_BUCKET}/${storagePath}`;
 }
+// Estrae lo storage_path da un URL pubblico del bucket (null se non è del bucket)
+function _storagePathFromUrl(u){
+  if(u&&typeof u==='string'&&u.includes(`/public/${SB_BUCKET}/`))
+    return decodeURIComponent(u.split(`/public/${SB_BUCKET}/`)[1]);
+  return null;
+}
+// Copia server-side un file dello Storage in un nuovo path e ne restituisce l'URL pubblico
+async function sbCopyFile(srcPath){
+  const base=(srcPath.split('/').pop()||'file.jpg').replace(/^\d+-[a-z0-9]+-/i,'');
+  const dst=`photos/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${base}`;
+  const res=await fetch(`${SB_URL}/storage/v1/object/copy`,{
+    method:'POST',
+    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},
+    body:JSON.stringify({bucketId:SB_BUCKET,sourceKey:srcPath,destinationKey:dst})
+  });
+  if(!res.ok)throw new Error(await res.text());
+  return sbFileUrl(dst);
+}
 
 // --- DB ops (archiveStore: tutte le letture/scritture archivio passano da qui) ---
 async function amFetchProjects(){
@@ -1821,6 +1880,17 @@ async function amDuplicateProject(id){
   if(!p)throw new Error('Progetto non trovato');
   const by=sessionStorage.getItem('sh_user')||'team';
   const stCopy=p.state?{...p.state,guestId:null}:p.state; // la copia avrà una sua Guest Area al primo salvataggio
+  if(stCopy){
+    // Duplica i file immagine su Storage: la copia diventa INDIPENDENTE.
+    // Così eliminare la copia (o l'originale) non intacca le foto dell'altro.
+    stCopy.photos={...(stCopy.photos||{})};
+    for(const k of Object.keys(stCopy.photos)){
+      const path=_storagePathFromUrl(stCopy.photos[k]);
+      if(path){ try{ stCopy.photos[k]=await sbCopyFile(path); }catch(e){ console.warn('copia foto',k,e); } }
+    }
+    const lpath=_storagePathFromUrl(stCopy.logo);
+    if(lpath){ try{ stCopy.logo=await sbCopyFile(lpath); }catch(e){ console.warn('copia logo',e); } }
+  }
   const r=await sbRest('projects',{method:'POST',body:JSON.stringify({name:p.name+' (copia)',description:p.description||'',created_by:by,state:stCopy})});
   return Array.isArray(r)?r[0]:r;
 }
@@ -1848,30 +1918,35 @@ async function amCreateProject(name,desc){
   return Array.isArray(r)?r[0]:r;
 }
 async function amDeleteProject(id){
-  // delete storage files (allegati + foto del builder referenziate nello state)
+  // Elimina i file Storage di questo progetto, MA salta quelli ancora referenziati
+  // da altri progetti (protegge i duplicati storici che condividono le stesse foto).
   try{
-    const files=(await sbRest(`project_files?project_id=eq.${id}&select=storage_path`))||[];
+    const paths=new Set();
+    (await sbRest(`project_files?project_id=eq.${id}&select=storage_path`)||[]).forEach(f=>{if(f.storage_path)paths.add(f.storage_path);});
+    let guestId=null;
     try{
       const rows=await sbRest(`projects?id=eq.${id}&select=state`);
       const st=rows&&rows[0]&&rows[0].state;
       if(st){
-        [st.logo,...Object.values(st.photos||{})].forEach(u=>{
-          if(u&&typeof u==='string'&&u.includes(`/public/${SB_BUCKET}/`)){
-            const p=u.split(`/public/${SB_BUCKET}/`)[1];
-            if(p)files.push({storage_path:decodeURIComponent(p)});
-          }
-        });
-        if(st.guestId){
-          files.push({storage_path:`guest/${st.guestId}/guida.html`});
-          files.push({storage_path:`guest/${st.guestId}/guida.pdf`});
-        }
+        [st.logo,...Object.values(st.photos||{})].forEach(u=>{const p=_storagePathFromUrl(u);if(p)paths.add(p);});
+        guestId=st.guestId||null;
       }
     }catch(e){console.warn('state photo cleanup',e);}
-    if(files&&files.length){
+    // togli i path ancora usati da altri progetti
+    try{
+      const others=(await sbRest(`projects?id=neq.${id}&select=state`))||[];
+      const referenced=new Set();
+      others.forEach(o=>{const s=o.state;if(!s)return;[s.logo,...Object.values(s.photos||{})].forEach(u=>{const p=_storagePathFromUrl(u);if(p)referenced.add(p);});});
+      referenced.forEach(p=>paths.delete(p));
+    }catch(e){console.warn('ref check',e);}
+    // i file Guest Area sono per-guestId (unici): sempre sicuri da eliminare
+    if(guestId){paths.add(`guest/${guestId}/guida.html`);paths.add(`guest/${guestId}/guida.pdf`);}
+    const list=[...paths];
+    if(list.length){
       await fetch(`${SB_URL}/storage/v1/object/${SB_BUCKET}`,{
         method:'DELETE',
         headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},
-        body:JSON.stringify({prefixes:files.map(f=>f.storage_path)})
+        body:JSON.stringify({prefixes:list})
       });
     }
   }catch(e){console.warn('storage cleanup',e);}
@@ -2195,7 +2270,16 @@ async function amGeneratePDF(id){
   render();
   await new Promise(r=>setTimeout(r,400));
   await _waitPreviewImages();
-  generatePDF();
+  // Foto remote → data URL solo per il build del PDF, poi ripristina gli URL
+  const remoteP=S.photos,remoteL=S.logo;
+  const pd={};
+  for(const [k,u] of Object.entries(S.photos||{})){ try{pd[k]=await urlToDataUrl(u);}catch(e){pd[k]=u;} }
+  let pl=S.logo; try{ if(S.logo)pl=await urlToDataUrl(S.logo); }catch(e){}
+  S.photos=pd;S.logo=pl;
+  render();
+  await _waitPreviewImages();
+  try{ await generatePDF(); }
+  finally{ S.photos=remoteP;S.logo=remoteL;render(); }
 }
 
 // Attende che tutte le immagini dell'anteprima (anche remote da Storage) siano caricate
@@ -2377,14 +2461,30 @@ async function publishGuestArea(state){
   overlay.classList.add('active');
   const bakP=S.photos,bakL=S.logo;
   try{
-    // usa le versioni Storage delle immagini: pagina e PDF pubblici identici
+    // 1) Pagina HTML: usa gli URL remoti (file leggero, le <img> si vedono cross-origin)
     S.photos={...state.photos};
     S.logo=state.logo;
     render();
     await _waitPreviewImages();
-    const pdf=await _buildPDF(m=>msgEl.textContent='Guest Area — '+m);
-    msgEl.textContent='Pubblicazione Guest Area…';
     const html=buildGuestHtml(gid);
+
+    // 2) PDF: converti le foto remote in data URL same-origin, così html2canvas
+    //    le disegna sempre (gli URL remoti già in cache senza CORS restano vuoti)
+    msgEl.textContent='Preparazione immagini…';
+    const photosData={};
+    for(const [k,url] of Object.entries(state.photos||{})){
+      try{ photosData[k]=await urlToDataUrl(url); }
+      catch(e){ photosData[k]=url; console.warn('foto non convertita',k,e); }
+    }
+    let logoData=state.logo;
+    try{ if(state.logo) logoData=await urlToDataUrl(state.logo); }catch(e){}
+    S.photos=photosData;
+    S.logo=logoData;
+    render();
+    await _waitPreviewImages();
+    const pdf=await _buildPDF(m=>msgEl.textContent='Guest Area — '+m);
+
+    msgEl.textContent='Pubblicazione Guest Area…';
     await sbStorage('POST',`guest/${gid}/guida.html`,new Blob([html],{type:'text/html'}),'text/html; charset=utf-8',true);
     await sbStorage('POST',`guest/${gid}/guida.pdf`,pdf.output('blob'),'application/pdf',true);
     return gaViewerUrl(gid);
@@ -2407,6 +2507,61 @@ function gaCopy(kind){
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(el.value).then(done).catch(()=>{el.select();document.execCommand('copy');done();});
   }else{el.select();document.execCommand('copy');done();}
+}
+
+// ======================================================
+// GALLERIA IMMAGINI — tutte le foto caricate, per appartamento e sezione
+// ======================================================
+const GAL_SECTIONS=[
+  {label:'📍 Mappa (copertina)',keys:['mapPhoto']},
+  {label:'🏢 Ingresso edificio (Pag. 2)',keys:['p2s1l','p2s1r','p2s2l','p2s2r']},
+  {label:'🔑 Ritiro chiavi (Pag. 3)',keys:['p3s1l','p3s1r','p3s2l','p3s2r']},
+  {label:'🚪 Ingresso appartamento (Pag. 4)',keys:['p4s1l','p4s1r','p4s2l','p4s2r']},
+  {label:'🅿️ Parcheggio (Pag. 5)',keys:['p5s1l','p5s1r','p5s2l','p5s2r']},
+  {label:'📶 QR WiFi (Pag. 6)',keys:['p6qr']},
+];
+let GAL_PROJECTS=[];
+async function openGallery(){
+  document.getElementById('gal-ov').classList.add('open');
+  document.getElementById('gal-search').value='';
+  document.getElementById('gal-body').innerHTML='<div class="am-loading">⏳ Caricamento…</div>';
+  try{
+    GAL_PROJECTS=await sbRest('projects?order=name.asc&select=id,name,state')||[];
+  }catch(e){
+    document.getElementById('gal-body').innerHTML='<div class="am-empty"><span class="am-empty-icon">⚠️</span><p>Errore: '+esc(e.message)+'</p></div>';
+    return;
+  }
+  renderGallery();
+}
+function closeGallery(){document.getElementById('gal-ov').classList.remove('open');}
+function renderGallery(){
+  const q=(document.getElementById('gal-search').value||'').trim().toLowerCase();
+  const body=document.getElementById('gal-body');
+  const list=GAL_PROJECTS.filter(p=>!q||(p.name||'').toLowerCase().includes(q));
+  if(!list.length){body.innerHTML='<div class="am-empty"><span class="am-empty-icon">🖼️</span><strong>Nessuna immagine</strong><p>Carica foto in un progetto e salvalo.</p></div>';return;}
+  body.innerHTML=list.map(p=>{
+    const st=p.state||{};
+    const photos=st.photos||{};
+    const lang=(st.lang||'').toUpperCase();
+    let total=0;
+    const secHtml=GAL_SECTIONS.map(sec=>{
+      const items=sec.keys.filter(k=>photos[k]).map(k=>{
+        total++;
+        const url=photos[k];
+        return`<a class="gal-thumb" href="${esc(url)}" target="_blank" rel="noopener" title="${esc(k)} — apri/scarica">
+          <img loading="lazy" src="${esc(url)}" alt="${esc(k)}" onerror="this.parentElement.classList.add('missing')">
+          <span class="gal-thumb-miss">⚠️ mancante</span>
+        </a>`;
+      }).join('');
+      if(!items)return'';
+      return`<div class="gal-sec"><div class="gal-sec-ttl">${sec.label}</div><div class="gal-grid">${items}</div></div>`;
+    }).join('');
+    const logoHtml=st.logo?`<img class="gal-logo" loading="lazy" src="${esc(st.logo)}" alt="logo" onerror="this.style.display='none'">`:'';
+    return`<div class="gal-apt">
+      <div class="gal-apt-hd">${logoHtml}<div class="gal-apt-name">🏠 ${esc(p.name)}</div>${lang?`<span class="gal-apt-lang">${lang}</span>`:''}<span class="gal-apt-count">${total} foto</span></div>
+      ${secHtml||'<div class="gal-empty-apt">Nessuna immagine in questo progetto.</div>'}
+    </div>`;
+  }).join('');
 }
 
 // Search & sort handlers
@@ -2445,6 +2600,7 @@ document.addEventListener('keydown',e=>{
     document.getElementById('am-rf-dlg').classList.remove('open');
     document.getElementById('am-sc-dlg').classList.remove('open');
     document.getElementById('ga-dlg').classList.remove('open');
+    document.getElementById('gal-ov').classList.remove('open');
   }
 });
 
@@ -2657,6 +2813,22 @@ document.querySelectorAll('.photo-up').forEach(wrap=>{
       <button class="btn-cancel" onclick="document.getElementById('am-rf-dlg').classList.remove('open')">Annulla</button>
       <button class="btn-confirm" onclick="amDoRename()">Salva</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== GALLERIA IMMAGINI ===== -->
+<div class="am-ov" id="gal-ov">
+  <div class="am-hd">
+    <div class="am-hd-l">
+      <div class="am-hd-title">🖼️ Immagini caricate</div>
+    </div>
+    <div class="am-hd-r">
+      <input class="am-search" id="gal-search" placeholder="🔍 Cerca appartamento…" oninput="renderGallery()">
+      <button class="am-btn-close" onclick="closeGallery()">✕</button>
+    </div>
+  </div>
+  <div class="am-content">
+    <div id="gal-body"><div class="am-loading">⏳ Caricamento…</div></div>
   </div>
 </div>
 

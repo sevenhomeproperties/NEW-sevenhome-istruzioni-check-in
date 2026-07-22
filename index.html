@@ -1842,18 +1842,6 @@ function _storagePathFromUrl(u){
     return decodeURIComponent(u.split(`/public/${SB_BUCKET}/`)[1]);
   return null;
 }
-// Copia server-side un file dello Storage in un nuovo path e ne restituisce l'URL pubblico
-async function sbCopyFile(srcPath){
-  const base=(srcPath.split('/').pop()||'file.jpg').replace(/^\d+-[a-z0-9]+-/i,'');
-  const dst=`photos/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${base}`;
-  const res=await fetch(`${SB_URL}/storage/v1/object/copy`,{
-    method:'POST',
-    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},
-    body:JSON.stringify({bucketId:SB_BUCKET,sourceKey:srcPath,destinationKey:dst})
-  });
-  if(!res.ok)throw new Error(await res.text());
-  return sbFileUrl(dst);
-}
 
 // --- DB ops (archiveStore: tutte le letture/scritture archivio passano da qui) ---
 async function amFetchProjects(){
@@ -1879,18 +1867,10 @@ async function amDuplicateProject(id){
   const p=rows&&rows[0];
   if(!p)throw new Error('Progetto non trovato');
   const by=sessionStorage.getItem('sh_user')||'team';
+  // La copia CONDIVIDE le stesse foto dell'originale (stessi file su Storage):
+  // nessuno spazio sprecato. L'eliminazione sicura (amDeleteProject) non cancella
+  // i file ancora referenziati da un altro progetto, quindi condividere è sicuro.
   const stCopy=p.state?{...p.state,guestId:null}:p.state; // la copia avrà una sua Guest Area al primo salvataggio
-  if(stCopy){
-    // Duplica i file immagine su Storage: la copia diventa INDIPENDENTE.
-    // Così eliminare la copia (o l'originale) non intacca le foto dell'altro.
-    stCopy.photos={...(stCopy.photos||{})};
-    for(const k of Object.keys(stCopy.photos)){
-      const path=_storagePathFromUrl(stCopy.photos[k]);
-      if(path){ try{ stCopy.photos[k]=await sbCopyFile(path); }catch(e){ console.warn('copia foto',k,e); } }
-    }
-    const lpath=_storagePathFromUrl(stCopy.logo);
-    if(lpath){ try{ stCopy.logo=await sbCopyFile(lpath); }catch(e){ console.warn('copia logo',e); } }
-  }
   const r=await sbRest('projects',{method:'POST',body:JSON.stringify({name:p.name+' (copia)',description:p.description||'',created_by:by,state:stCopy})});
   return Array.isArray(r)?r[0]:r;
 }

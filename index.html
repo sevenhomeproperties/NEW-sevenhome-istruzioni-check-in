@@ -678,6 +678,13 @@ textarea{resize:vertical;min-height:64px}
         </div>
       </div>
       <div class="fg"><label class="lbl" id="nl-p5">Note</label><textarea id="p5notes" oninput="render()"></textarea></div>
+      <div class="fg">
+        <label class="lbl" id="ll-p5">Link Utili</label>
+        <div class="frow">
+          <input type="url" id="p5lurl" placeholder="https://... (posizione parcheggio)" oninput="render()">
+          <input type="text" id="p5llbl" placeholder="Etichetta" oninput="render()">
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1130,6 +1137,7 @@ function updateFormLabels(){
     const nl=document.getElementById('nl-p'+n);if(nl)nl.textContent=t.notes;
   });
   const ll=document.getElementById('ll-p2');if(ll)ll.textContent=t.links;
+  const ll5=document.getElementById('ll-p5');if(ll5)ll5.textContent=t.links;
 }
 
 // ======================================================
@@ -1179,7 +1187,7 @@ function render(){
     {key:'p2',hasLink:true},
     {key:'p3',hasLink:false},
     {key:'p4',hasLink:false},
-    {key:'p5',hasLink:false},
+    {key:'p5',hasLink:true},
     {key:'p6',isInfo:true},
   ];
   let seqNum=1;
@@ -1383,7 +1391,7 @@ const FIELD_IDS = [
   'p2s1lt','p2s1rt','p2s2lt','p2s2rt','p2notes','p2lurl','p2llbl',
   'p3s1lt','p3s1rt','p3s2lt','p3s2rt','p3notes',
   'p4s1lt','p4s1rt','p4s2lt','p4s2rt','p4notes',
-  'p5s1lt','p5s1rt','p5s2lt','p5s2rt','p5notes',
+  'p5s1lt','p5s1rt','p5s2lt','p5s2rt','p5notes','p5lurl','p5llbl',
   'p6ssid','p6pass',
   'p6t1n','p6t1p','p6t2n','p6t2p','p6t3n','p6t3p','p6t4n','p6t4p',
 ];

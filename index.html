@@ -1589,7 +1589,7 @@ async function loadProject(id){
 
   FIELD_IDS.forEach(fid=>{
     const el=document.getElementById(fid);
-    if(el && st.fields && st.fields[fid]!==undefined) el.value=st.fields[fid];
+    if(el) el.value=(st.fields && st.fields[fid]!==undefined)?st.fields[fid]:'';
   });
   TOGGLE_IDS.forEach(tid=>{
     const el=document.getElementById(tid);
@@ -1776,7 +1776,7 @@ function restoreDraft(){
   if(!d)return;
   const hasContent=Object.values(d.fields||{}).some(v=>v)||Object.keys(d.photos||{}).length||d.logo;
   if(!hasContent)return;
-  FIELD_IDS.forEach(id=>{const el=document.getElementById(id);if(el&&d.fields&&d.fields[id]!==undefined)el.value=d.fields[id];});
+  FIELD_IDS.forEach(id=>{const el=document.getElementById(id);if(el)el.value=(d.fields&&d.fields[id]!==undefined)?d.fields[id]:'';});
   TOGGLE_IDS.forEach(id=>{const el=document.getElementById(id);if(el&&d.toggles&&d.toggles[id]!==undefined)el.checked=d.toggles[id];});
   S.logo=d.logo||null;
   S.photos={...(d.photos||{})};
@@ -2241,7 +2241,7 @@ async function amGeneratePDF(id){
   const p=list.find(x=>x.id===id);
   if(!p||!p.state)return;
   const st=p.state;
-  FIELD_IDS.forEach(fid=>{const el=document.getElementById(fid);if(el&&st.fields&&st.fields[fid]!==undefined)el.value=st.fields[fid];});
+  FIELD_IDS.forEach(fid=>{const el=document.getElementById(fid);if(el)el.value=(st.fields&&st.fields[fid]!==undefined)?st.fields[fid]:'';});
   TOGGLE_IDS.forEach(tid=>{const el=document.getElementById(tid);if(el&&st.toggles&&st.toggles[tid]!==undefined)el.checked=st.toggles[tid];});
   S.logo=st.logo||null;
   S.photos={...(st.photos||{})};

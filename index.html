@@ -2399,7 +2399,9 @@ function buildGuestHtml(gid){
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 ${styles}
-html,body{margin:0;padding:0;background:#EDEAE4;font-family:'Inter',sans-serif;min-height:0;height:auto!important;overflow:visible!important}
+html,body{margin:0;padding:0;background:#EDEAE4;font-family:'Inter',sans-serif;min-height:0;height:auto!important;overflow:visible!important;-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important}
+/* Disattiva il "font boosting" di Safari/Chrome mobile che gonfia i blocchi di testo (Note) rompendo la scala della pagina */
+.g-scale *{-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important}
 body{padding:60px 0 100px!important;overflow-x:hidden!important;overflow-y:auto!important}
 .g-hd{position:fixed;top:0;left:0;right:0;background:#1A1A2E;color:#fff;display:flex;align-items:center;gap:10px;padding:11px 16px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
 .g-hd-icon{width:32px;height:32px;background:#C9A84C;color:#1A1A2E;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
